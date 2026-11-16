@@ -21,7 +21,7 @@ export function Hero({ totalUnitsCount, totalLotsCount }: HeroProps) {
             </h1>
             <p className="text-base text-slate-600 leading-relaxed max-w-xl mb-6">
               รวบรวมข้อมูลหม้อแปลงไฟฟ้าเก่าและชำรุดที่รอจำหน่ายในพื้นที่ กฟส.ฝาง
-              จัดแยกตามล็อตอย่างเป็นระบบ พร้อมแสดงรายละเอียดเบื้องต้น หมายเลข PEA No.
+              จัดแยกตามประกาศอย่างเป็นระบบ พร้อมแสดงรายละเอียดเบื้องต้น หมายเลข PEA No.
               และรูปภาพประกอบสำหรับผู้ที่สนใจเข้าชมได้ทันที
             </p>
 
@@ -30,7 +30,7 @@ export function Hero({ totalUnitsCount, totalLotsCount }: HeroProps) {
                 href="#lots"
                 className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 whitespace-nowrap shrink-0"
               >
-                <span>เลือกดูหม้อแปลงแยกตามล็อต</span>
+                <span>เลือกดูหม้อแปลงตามประกาศ</span>
                 <ArrowDown className="w-4 h-4" aria-hidden="true" />
               </a>
             </div>
@@ -50,9 +50,9 @@ export function Hero({ totalUnitsCount, totalLotsCount }: HeroProps) {
 
         <div className="mt-8 pt-7 border-t border-slate-200 grid grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
-            <p className="text-xs text-slate-500 mb-1">จำนวนล็อตที่เปิดให้ชมข้อมูล</p>
+            <p className="text-xs text-slate-500 mb-1">จำนวนประกาศที่เปิดให้ชมข้อมูล</p>
             <p className="font-mono text-2xl font-semibold text-slate-900 tabular-nums">
-              {totalLotsCount} ล็อต ({totalUnitsCount} เครื่อง)
+              {totalLotsCount} ประกาศ ({totalUnitsCount} เครื่อง)
             </p>
           </div>
           <div>

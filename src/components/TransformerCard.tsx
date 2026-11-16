@@ -53,7 +53,7 @@ export function TransformerCard({ unit, onInspect }: TransformerCardProps) {
 
         <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-slate-500">จำนวนในล็อต</p>
+            <p className="text-xs text-slate-500">จำนวนในประกาศ</p>
             <p className="font-mono text-base font-bold text-slate-900 tabular-nums">
               {unit.stockQty} เครื่อง
             </p>

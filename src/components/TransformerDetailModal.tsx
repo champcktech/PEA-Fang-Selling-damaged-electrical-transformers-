@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Check, Copy, X } from 'lucide-react';
-import { PHOTO_SLOT_LABELS, TransformerUnit } from '../data/transformers';
+import { Calendar, Check, Clock, Copy, Gavel, X } from 'lucide-react';
+import {
+  PHOTO_SLOT_LABELS,
+  TransformerLot,
+  TransformerUnit,
+  formatThaiDateTime,
+} from '../data/transformers';
 import { ResilientImage } from './ResilientImage';
 
 interface TransformerDetailModalProps {
   unit: TransformerUnit | null;
+  lot?: TransformerLot | null;
   onClose: () => void;
 }
 
 export function TransformerDetailModal({
   unit,
+  lot,
   onClose,
 }: TransformerDetailModalProps) {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
@@ -53,10 +60,10 @@ export function TransformerDetailModal({
 
   const specs: Array<{ label: string; value: string; mono?: boolean }> = [
     { label: 'PEA No.', value: unit.peaNo, mono: true },
-    { label: 'ล็อตสินค้า', value: unit.lotCode },
+    { label: 'ประกาศขาย', value: unit.lotCode },
     { label: 'พิกัดกำลังไฟฟ้า', value: `${unit.kva.toLocaleString('th-TH')} kVA`, mono: true },
     { label: 'จำนวนเฟส', value: unit.phase, mono: true },
-    { label: 'จำนวนในล็อต', value: `${unit.stockQty} เครื่อง`, mono: true },
+    { label: 'จำนวนในประกาศ', value: `${unit.stockQty} เครื่อง`, mono: true },
   ];
 
   return (
@@ -192,7 +199,7 @@ export function TransformerDetailModal({
                 ))}
               </dl>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-5">
                 <h4 className="text-xs font-semibold text-slate-800 mb-1.5">
                   รายละเอียดเพิ่มเติม
                 </h4>
@@ -200,6 +207,43 @@ export function TransformerDetailModal({
                   {unit.summaryNote}
                 </p>
               </div>
+
+              {lot && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 mb-6 space-y-2.5">
+                  <h4 className="text-xs font-bold text-amber-950">
+                    กำหนดการของประกาศนี้
+                  </h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 text-slate-700 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
+                        วันที่เริ่ม
+                      </span>
+                      <span className="font-mono font-bold text-slate-900 tabular-nums">
+                        {formatThaiDateTime(lot.startDate)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 text-slate-700 font-medium">
+                        <Clock className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
+                        วันที่สุดท้าย
+                      </span>
+                      <span className="font-mono font-bold text-slate-900 tabular-nums">
+                        {formatThaiDateTime(lot.endDate)}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-amber-200 flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-1.5 text-amber-900 font-bold">
+                        <Gavel className="w-3.5 h-3.5 text-amber-700" aria-hidden="true" />
+                        วันที่เปิดซอง
+                      </span>
+                      <span className="font-mono text-sm font-bold text-amber-950 tabular-nums">
+                        {formatThaiDateTime(lot.bidOpeningAt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-auto">
                 <button

@@ -21,7 +21,7 @@ export function Header({ onJumpToLots }: HeaderProps) {
             href="#lots"
             className="hover:text-slate-900 hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
           >
-            ล็อตสินค้า
+            ประกาศขาย
           </a>
           <a
             href="#catalog"
@@ -43,7 +43,7 @@ export function Header({ onJumpToLots }: HeaderProps) {
             onClick={onJumpToLots}
             className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 whitespace-nowrap shrink-0 cursor-pointer"
           >
-            ดูรายการแยกตามล็อต
+            ดูรายการตามประกาศ
           </button>
         </div>
       </div>

@@ -50,17 +50,17 @@ const IMG_DETAIL_BUSHING = '/images/detail_nameplate_bushing_1794794276341.jpg';
 export const LOTS: TransformerLot[] = [
   {
     id: 'lot-f1',
-    shortLabel: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
+    shortLabel: 'ประกาศที่ 1 · ระบบจำหน่าย 22kV',
     sourceLocation: 'ลานพัสดุ กฟส.ฝาง อ.ฝาง จ.เชียงใหม่',
     startDate: '2026-11-16T08:30',
     endDate: '2026-11-24T16:30',
     bidOpeningAt: '2026-11-25T10:00',
     description:
-      'หม้อแปลงไฟฟ้าชนิดน้ำมันที่ปลดระวางจากการใช้งานในพื้นที่ อ.ฝาง เนื่องจากขดลวดเสื่อมสภาพ ฟ้าผ่า หรือตัวถังรั่วซึม จัดเรียงแยกตามล็อตพร้อมป้าย PEA No. เพื่อความสะดวกในการตรวจสอบสภาพจริง',
+      'หม้อแปลงไฟฟ้าชนิดน้ำมันที่ปลดระวางจากการใช้งานในพื้นที่ อ.ฝาง เนื่องจากขดลวดเสื่อมสภาพ ฟ้าผ่า หรือตัวถังรั่วซึม จัดเรียงแยกตามประกาศพร้อมป้าย PEA No. เพื่อความสะดวกในการตรวจสอบสภาพจริง',
   },
   {
     id: 'lot-f2',
-    shortLabel: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
+    shortLabel: 'ประกาศที่ 2 · กำลังกลาง–ใหญ่',
     sourceLocation: 'ลานพัสดุ กฟส.ฝาง (โซนหม้อแปลงใหญ่)',
     startDate: '2026-11-18T08:30',
     endDate: '2026-11-27T16:30',
@@ -70,7 +70,7 @@ export const LOTS: TransformerLot[] = [
   },
   {
     id: 'lot-f3',
-    shortLabel: 'ล็อตที่ 3 · ชำรุดหนัก / ซากอะไหล่',
+    shortLabel: 'ประกาศที่ 3 · ชำรุดหนัก / ซากอะไหล่',
     sourceLocation: 'จุดพักพัสดุชำรุด กฟส.ฝาง',
     startDate: '2026-11-20T08:30',
     endDate: '2026-12-02T16:30',
@@ -84,7 +84,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f1-1',
     lotId: 'lot-f1',
-    lotCode: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
+    lotCode: 'ประกาศที่ 1 · ระบบจำหน่าย 22kV',
     peaNo: 'TR54-025018',
     kva: 250,
     phase: '3 เฟส',
@@ -100,7 +100,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f1-2',
     lotId: 'lot-f1',
-    lotCode: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
+    lotCode: 'ประกาศที่ 1 · ระบบจำหน่าย 22kV',
     peaNo: 'TR52-016044',
     kva: 160,
     phase: '3 เฟส',
@@ -116,7 +116,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f1-3',
     lotId: 'lot-f1',
-    lotCode: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
+    lotCode: 'ประกาศที่ 1 · ระบบจำหน่าย 22kV',
     peaNo: 'TR51-010209',
     kva: 100,
     phase: '3 เฟส',
@@ -132,7 +132,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f2-1',
     lotId: 'lot-f2',
-    lotCode: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
+    lotCode: 'ประกาศที่ 2 · กำลังกลาง–ใหญ่',
     peaNo: 'TR55-100012',
     kva: 1000,
     phase: '3 เฟส',
@@ -148,7 +148,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f2-2',
     lotId: 'lot-f2',
-    lotCode: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
+    lotCode: 'ประกาศที่ 2 · กำลังกลาง–ใหญ่',
     peaNo: 'TR56-050031',
     kva: 500,
     phase: '3 เฟส',
@@ -164,7 +164,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f2-3',
     lotId: 'lot-f2',
-    lotCode: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
+    lotCode: 'ประกาศที่ 2 · กำลังกลาง–ใหญ่',
     peaNo: 'TR57-080007',
     kva: 800,
     phase: '3 เฟส',
@@ -180,7 +180,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f3-1',
     lotId: 'lot-f3',
-    lotCode: 'ล็อตที่ 3 · ชำรุดหนัก / ซากอะไหล่',
+    lotCode: 'ประกาศที่ 3 · ชำรุดหนัก / ซากอะไหล่',
     peaNo: 'TR48-016091',
     kva: 160,
     phase: '3 เฟส',
@@ -196,7 +196,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
   {
     id: 'tr-f3-2',
     lotId: 'lot-f3',
-    lotCode: 'ล็อตที่ 3 · ชำรุดหนัก / ซากอะไหล่',
+    lotCode: 'ประกาศที่ 3 · ชำรุดหนัก / ซากอะไหล่',
     peaNo: 'TR47-005155',
     kva: 50,
     phase: '1 เฟส',

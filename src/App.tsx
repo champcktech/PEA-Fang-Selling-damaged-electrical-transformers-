@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Building2, MapPin, Phone, Search } from 'lucide-react';
+import { Building2, Calendar, Clock, Gavel, MapPin, Phone, Search } from 'lucide-react';
 import { AdminConsoleModal } from './components/AdminConsoleModal';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -84,10 +84,10 @@ export default function App() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-mono font-medium text-amber-700 mb-1.5">
-                  ข้อมูลหม้อแปลงเก่าชำรุดแยกตามล็อต
+                  ข้อมูลหม้อแปลงเก่าชำรุดแยกตามประกาศ
                 </p>
                 <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
-                  เลือกชมรายละเอียดหม้อแปลงตามล็อต
+                  เลือกชมรายละเอียดหม้อแปลงตามประกาศ
                 </h2>
               </div>
               <p className="text-sm text-slate-600 font-mono tabular-nums">
@@ -95,10 +95,10 @@ export default function App() {
               </p>
             </div>
 
-            {/* Interactive Lot Filter Tabs */}
+            {/* Interactive Announcement Filter Tabs */}
             <div
               role="tablist"
-              aria-label="ตัวเลือกล็อตหม้อแปลงไฟฟ้า"
+              aria-label="ตัวเลือกประกาศขายหม้อแปลงไฟฟ้า"
               className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-200/70 rounded-xl"
             >
               <button
@@ -112,7 +112,7 @@ export default function App() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                ทั้งหมด ({lots.length} ล็อต)
+                ทั้งหมด ({lots.length} ประกาศ)
               </button>
               {lots.map((lot) => (
                 <button
@@ -172,7 +172,7 @@ export default function App() {
                   ไม่พบหม้อแปลงที่ตรงกับเงื่อนไขการค้นหา
                 </p>
                 <p className="text-sm text-slate-500 mb-5">
-                  ลองเปลี่ยนคำค้นหาหรือรีเซ็ตตัวกรองเพื่อแสดงหม้อแปลงทุกล็อต
+                  ลองเปลี่ยนคำค้นหาหรือรีเซ็ตตัวกรองเพื่อแสดงหม้อแปลงทุกประกาศ
                 </p>
                 <button
                   type="button"
@@ -209,24 +209,47 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                        <div>
-                          <p className="text-slate-500 mb-0.5">วันที่เริ่ม</p>
-                          <p className="font-mono font-semibold text-slate-900 tabular-nums">
-                            {formatThaiDateTime(lot.startDate)}
-                          </p>
+                      <div className="pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5 sm:p-4 flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-slate-200/80 text-slate-800 shrink-0">
+                            <Calendar className="w-4 h-4" aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-600">
+                              วันที่เริ่ม
+                            </p>
+                            <p className="font-mono text-sm sm:text-base font-bold text-slate-900 tabular-nums mt-0.5 leading-snug">
+                              {formatThaiDateTime(lot.startDate)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-slate-500 mb-0.5">วันที่สุดท้าย</p>
-                          <p className="font-mono font-semibold text-slate-900 tabular-nums">
-                            {formatThaiDateTime(lot.endDate)}
-                          </p>
+
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5 sm:p-4 flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-slate-200/80 text-slate-800 shrink-0">
+                            <Clock className="w-4 h-4" aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-600">
+                              วันที่สุดท้าย
+                            </p>
+                            <p className="font-mono text-sm sm:text-base font-bold text-slate-900 tabular-nums mt-0.5 leading-snug">
+                              {formatThaiDateTime(lot.endDate)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-slate-500 mb-0.5">วันที่เปิดซอง</p>
-                          <p className="font-mono font-semibold text-amber-800 tabular-nums">
-                            {formatThaiDateTime(lot.bidOpeningAt)}
-                          </p>
+
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3.5 sm:p-4 flex items-start gap-3 ring-1 ring-amber-200/70">
+                          <div className="p-2 rounded-lg bg-amber-500 text-slate-950 shrink-0">
+                            <Gavel className="w-4 h-4" aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-amber-900">
+                              วันที่เปิดซอง
+                            </p>
+                            <p className="font-mono text-sm sm:text-base font-bold text-amber-950 tabular-nums mt-0.5 leading-snug">
+                              {formatThaiDateTime(lot.bidOpeningAt)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -314,6 +337,7 @@ export default function App() {
 
       <TransformerDetailModal
         unit={inspectedUnit}
+        lot={lots.find((l) => l.id === inspectedUnit?.lotId) || null}
         onClose={() => setInspectedUnit(null)}
       />
 

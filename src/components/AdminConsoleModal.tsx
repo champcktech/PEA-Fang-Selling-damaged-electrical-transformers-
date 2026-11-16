@@ -257,7 +257,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   const handleClearAllCatalog = async () => {
     setErrorMsg(null);
-    setBusyMessage('กำลังลบข้อมูลหม้อแปลงและล็อตทั้งหมดออกจาก Firestore...');
+    setBusyMessage('กำลังลบข้อมูลหม้อแปลงและประกาศทั้งหมดออกจาก Firestore...');
     try {
       if (!isUsingFirestoreData) {
         await clearAllCatalogInFirestore([], []);
@@ -278,7 +278,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   const handleDeleteLot = async (lot: TransformerLot) => {
     setErrorMsg(null);
-    setBusyMessage(`กำลังลบ ${lot.shortLabel} และหม้อแปลงในล็อต...`);
+    setBusyMessage(`กำลังลบ ${lot.shortLabel} และหม้อแปลงในประกาศ...`);
     try {
       if (!isUsingFirestoreData) {
         await seedInitialCatalogToFirestore({ excludeLotId: lot.id });
@@ -292,7 +292,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
       setBusyMessage(null);
     } catch (err) {
       setBusyMessage(null);
-      setErrorMsg(err instanceof Error ? err.message : 'ลบล็อตไม่สำเร็จ');
+      setErrorMsg(err instanceof Error ? err.message : 'ลบประกาศไม่สำเร็จ');
     }
   };
 
@@ -316,7 +316,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
   const handleSaveLot = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    setBusyMessage('กำลังบันทึกล็อตสินค้าลง Firestore...');
+    setBusyMessage('กำลังบันทึกประกาศลง Firestore...');
     try {
       if (!isUsingFirestoreData && editingLotId) {
         await seedInitialCatalogToFirestore();
@@ -337,7 +337,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
       setBusyMessage(null);
     } catch (err) {
       setBusyMessage(null);
-      setErrorMsg(err instanceof Error ? err.message : 'บันทึกล็อตไม่สำเร็จ');
+      setErrorMsg(err instanceof Error ? err.message : 'บันทึกประกาศไม่สำเร็จ');
     }
   };
 
@@ -351,13 +351,13 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
     if (!isUsingFirestoreData) {
       setErrorMsg(
-        'กรุณากด "นำเข้าข้อมูลตั้งต้น กฟส.ฝาง" หรือเพิ่มล็อตใน Firestore ก่อนเพิ่มหม้อแปลง'
+        'กรุณากด "นำเข้าข้อมูลตั้งต้น กฟส.ฝาง" หรือเพิ่มประกาศใน Firestore ก่อนเพิ่มหม้อแปลง'
       );
       return;
     }
     const targetLot = lots.find((l) => l.id === unitLotId) || lots[0];
     if (!targetLot) {
-      setErrorMsg('ไม่พบล็อตที่เลือก กรุณาสร้างล็อตสินค้าก่อน');
+      setErrorMsg('ไม่พบประกาศที่เลือก กรุณาสร้างประกาศก่อน');
       return;
     }
 
@@ -415,7 +415,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
               จัดการฐานข้อมูลหม้อแปลง กฟส.ฝาง (Firebase Firestore)
             </h2>
             <p className="text-xs text-slate-300">
-              สำหรับเจ้าหน้าที่ในการเพิ่ม/แก้ไข/ลบข้อมูลล็อตและรายการหม้อแปลงเก่าชำรุด
+              สำหรับเจ้าหน้าที่ในการเพิ่ม/แก้ไข/ลบข้อมูลประกาศและรายการหม้อแปลงเก่าชำรุด
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -523,7 +523,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                 {(
                   [
                     { id: 'transformers', label: `รายการหม้อแปลง (${units.length})` },
-                    { id: 'lots', label: `ล็อตสินค้า (${lots.length})` },
+                    { id: 'lots', label: `ประกาศขาย (${lots.length})` },
                   ] as const
                 ).map((tab) => (
                   <button
@@ -584,7 +584,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                     >
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-bold text-slate-900">
-                          {editingLotId ? 'แก้ไขข้อมูลล็อต' : 'เพิ่มล็อตใหม่ลง Firestore'}
+                          {editingLotId ? 'แก้ไขข้อมูลประกาศ' : 'เพิ่มประกาศใหม่ลง Firestore'}
                         </h3>
                         {editingLotId && (
                           <button
@@ -599,14 +599,14 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                          ชื่อล็อต *
+                          ชื่อประกาศ *
                         </label>
                         <input
                           type="text"
                           required
                           value={lotShortLabel}
                           onChange={(e) => setLotShortLabel(e.target.value)}
-                          placeholder="เช่น ล็อตที่ 4 · หม้อแปลงจำหน่าย อ.ฝาง"
+                          placeholder="เช่น ประกาศที่ 4 · หม้อแปลงจำหน่าย อ.ฝาง"
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         />
                       </div>
@@ -666,14 +666,14 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                          คำอธิบายล็อต *
+                          คำอธิบายประกาศ *
                         </label>
                         <textarea
                           required
                           rows={3}
                           value={lotDescription}
                           onChange={(e) => setLotDescription(e.target.value)}
-                          placeholder="รายละเอียดสภาพโดยรวมของหม้อแปลงในล็อต"
+                          placeholder="รายละเอียดสภาพโดยรวมของหม้อแปลงในประกาศ"
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         />
                       </div>
@@ -684,18 +684,18 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                         className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg cursor-pointer disabled:opacity-50"
                       >
                         <Plus className="w-4 h-4" aria-hidden="true" />
-                        <span>{editingLotId ? 'บันทึกการแก้ไขล็อต' : 'เพิ่มล็อตลง Firestore'}</span>
+                        <span>{editingLotId ? 'บันทึกการแก้ไขประกาศ' : 'เพิ่มประกาศลง Firestore'}</span>
                       </button>
                     </form>
                   </div>
 
                   <div className="lg:col-span-7 space-y-3">
                     <h3 className="text-sm font-bold text-slate-900">
-                      รายการล็อตทั้งหมด ({lots.length} ล็อต)
+                      รายการประกาศทั้งหมด ({lots.length} ประกาศ)
                     </h3>
                     {lots.length === 0 ? (
                       <div className="p-8 text-center border border-slate-200 rounded-xl text-sm text-slate-500">
-                        ยังไม่มีล็อตสินค้าในฐานข้อมูล สามารถสร้างล็อตใหม่ได้ทางซ้าย
+                        ยังไม่มีประกาศในฐานข้อมูล สามารถสร้างประกาศใหม่ได้ทางซ้าย
                       </div>
                     ) : (
                       <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden bg-white">
@@ -771,7 +771,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                          สังกัดล็อต *
+                          สังกัดประกาศ *
                         </label>
                         <select
                           value={
@@ -783,7 +783,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         >
                           {lots.length === 0 ? (
-                            <option value="">-- กรุณาสร้างล็อตสินค้าก่อน --</option>
+                            <option value="">-- กรุณาสร้างประกาศก่อน --</option>
                           ) : (
                             lots.map((l) => (
                               <option key={l.id} value={l.id}>
