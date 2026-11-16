@@ -32,7 +32,7 @@ export interface TransformerUnit {
   images: TransformerImage[];
 }
 
-export const HERO_IMAGE = '/images/hero_transformer_yard_1794794273321.jpg';
+export const HERO_IMAGE = '/assets/aistudio/banner_c88a818b.jpeg';
 
 const IMG_OIL_HIGH = '/images/lot_oil_high_kva_1794794273929.jpg';
 const IMG_POLE_DIST = '/images/lot_pole_mounted_1794794274166.jpg';

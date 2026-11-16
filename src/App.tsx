@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Building2, MapPin, Phone, Search } from 'lucide-react';
 import { AdminConsoleModal } from './components/AdminConsoleModal';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -247,9 +247,57 @@ export default function App() {
             )}
           </div>
         </section>
+
+        <section id="contact" className="bg-white border-t border-slate-200 py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-6">
+              <p className="text-xs font-mono font-medium text-amber-700 mb-1">
+                ข้อมูลติดต่อหน่วยงาน
+              </p>
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-900">
+                แผนกมิเตอร์และหม้อแปลง การไฟฟ้าส่วนภูมิภาคสาขาฝาง
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                <Building2 className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">หน่วยงานรับผิดชอบ</p>
+                  <p className="text-sm font-semibold text-slate-900 leading-relaxed">
+                    แผนกมิเตอร์และหม้อแปลง การไฟฟ้าส่วนภูมิภาคสาขาฝาง
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                <MapPin className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">ที่อยู่</p>
+                  <p className="text-sm font-semibold text-slate-900 leading-relaxed">
+                    343 หมู่ 4 ตำบลเวียง อำเภอฝาง จังหวัดเชียงใหม่ 50110
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                <Phone className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">โทรศัพท์ติดต่อ</p>
+                  <a
+                    href="tel:053452170"
+                    className="font-mono text-base font-bold text-slate-900 hover:text-amber-700 transition-colors tabular-nums"
+                  >
+                    053452170
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer className="bg-white border-t border-slate-200 py-8">
+      <footer className="bg-slate-50 border-t border-slate-200 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>
             รายละเอียดหม้อแปลงขาย เก่าชำรุด กฟส.ฝาง · ข้อมูลเพื่อการเข้าชมรายละเอียดเบื้องต้นและรูปภาพประกอบ

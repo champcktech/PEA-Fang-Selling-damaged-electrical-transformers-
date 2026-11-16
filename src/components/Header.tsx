@@ -29,6 +29,12 @@ export function Header({ onJumpToLots }: HeaderProps) {
           >
             รายการหม้อแปลง
           </a>
+          <a
+            href="#contact"
+            className="hover:text-slate-900 hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
+          >
+            ข้อมูลติดต่อ
+          </a>
         </nav>
 
         <div className="flex items-center shrink-0">

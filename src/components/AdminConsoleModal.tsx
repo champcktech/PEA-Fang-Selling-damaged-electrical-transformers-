@@ -139,7 +139,11 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
   ]);
 
   useEffect(() => {
-    if (!unitLotId && lots.length > 0) {
+    if (lots.length === 0) {
+      if (unitLotId !== '') setUnitLotId('');
+      return;
+    }
+    if (!lots.some((l) => l.id === unitLotId)) {
       setUnitLotId(lots[0].id);
     }
   }, [lots, unitLotId]);
@@ -342,7 +346,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
       );
       return;
     }
-    const targetLot = lots.find((l) => l.id === unitLotId);
+    const targetLot = lots.find((l) => l.id === unitLotId) || lots[0];
     if (!targetLot) {
       setErrorMsg('ไม่พบล็อตที่เลือก กรุณาสร้างล็อตสินค้าก่อน');
       return;
@@ -754,15 +758,23 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                           สังกัดล็อต *
                         </label>
                         <select
-                          value={unitLotId}
+                          value={
+                            lots.some((l) => l.id === unitLotId)
+                              ? unitLotId
+                              : lots[0]?.id || ''
+                          }
                           onChange={(e) => setUnitLotId(e.target.value)}
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         >
-                          {lots.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.shortLabel}
-                            </option>
-                          ))}
+                          {lots.length === 0 ? (
+                            <option value="">-- กรุณาสร้างล็อตสินค้าก่อน --</option>
+                          ) : (
+                            lots.map((l) => (
+                              <option key={l.id} value={l.id}>
+                                {l.shortLabel}
+                              </option>
+                            ))
+                          )}
                         </select>
                       </div>
 
