@@ -6,7 +6,14 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  User,
+  getRedirectResult,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
+} from 'firebase/auth';
 import { collection, doc, onSnapshot, orderBy, query } from 'firebase/firestore';
 import {
   LOTS as SEED_LOTS,
@@ -29,9 +36,11 @@ import {
 interface FirebaseContextValue {
   user: User | null;
   authReady: boolean;
+  authErrorCode: string | null;
   isAdmin: boolean;
   signInWithGoogle: () => Promise<User | null>;
   signOutUser: () => Promise<void>;
+  clearAuthError: () => void;
   lots: TransformerLot[];
   units: TransformerUnit[];
   isUsingFirestoreData: boolean;
@@ -43,6 +52,7 @@ const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authErrorCode, setAuthErrorCode] = useState<string | null>(null);
 
   const [firestoreLots, setFirestoreLots] = useState<TransformerLot[]>([]);
   const [firestoreUnits, setFirestoreUnits] = useState<TransformerUnit[]>([]);
@@ -52,8 +62,18 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     testConnection();
+    getRedirectResult(auth).catch((err: unknown) => {
+      const code =
+        typeof err === 'object' && err !== null && 'code' in err
+          ? String((err as { code: string }).code)
+          : 'auth/unknown';
+      setAuthErrorCode(code);
+    });
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        setAuthErrorCode(null);
+      }
       setAuthReady(true);
     });
     return () => unsubscribeAuth();
@@ -123,13 +143,30 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   );
 
   const signInWithGoogle = async () => {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    setAuthErrorCode(null);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    } catch (err: unknown) {
+      const code =
+        typeof err === 'object' && err !== null && 'code' in err
+          ? String((err as { code: string }).code)
+          : 'auth/unknown';
+      if (code === 'auth/popup-blocked') {
+        await signInWithRedirect(auth, googleProvider);
+        return null;
+      }
+      setAuthErrorCode(code);
+      throw err;
+    }
   };
 
   const signOutUser = async () => {
+    setAuthErrorCode(null);
     await signOut(auth);
   };
+
+  const clearAuthError = () => setAuthErrorCode(null);
 
   const isUsingFirestoreData =
     catalogInitialized || firestoreLots.length > 0 || firestoreUnits.length > 0;
@@ -148,9 +185,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const value: FirebaseContextValue = {
     user,
     authReady,
+    authErrorCode,
     isAdmin,
     signInWithGoogle,
     signOutUser,
+    clearAuthError,
     lots,
     units,
     isUsingFirestoreData,

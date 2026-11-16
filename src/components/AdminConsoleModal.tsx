@@ -104,8 +104,10 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
   const {
     user,
     isAdmin,
+    authErrorCode,
     signInWithGoogle,
     signOutUser,
+    clearAuthError,
     lots,
     units,
     isUsingFirestoreData,
@@ -114,6 +116,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('transformers');
   const [busyMessage, setBusyMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
 
   // Lot Form State
   const [editingLotId, setEditingLotId] = useState<string | null>(null);
@@ -418,7 +421,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
         </div>
 
         {!user ? (
-          <div className="p-10 text-center space-y-4">
+          <div className="p-8 sm:p-10 text-center space-y-4">
             <p className="text-base font-semibold text-slate-900">
               กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลเพื่อจัดการฐานข้อมูล
             </p>
@@ -428,12 +431,61 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
             </p>
             <button
               type="button"
-              onClick={() => signInWithGoogle()}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg cursor-pointer"
+              disabled={authBusy}
+              onClick={async () => {
+                setAuthBusy(true);
+                clearAuthError();
+                try {
+                  await signInWithGoogle();
+                } catch {
+                  // Error code is stored in FirebaseContext authErrorCode
+                } finally {
+                  setAuthBusy(false);
+                }
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg cursor-pointer disabled:opacity-50"
             >
               <LogIn className="w-4 h-4 text-amber-400" aria-hidden="true" />
-              <span>เข้าสู่ระบบด้วย Google</span>
+              <span>{authBusy ? 'กำลังเปิดหน้าต่างเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google'}</span>
             </button>
+
+            {authErrorCode && (
+              <div className="max-w-lg mx-auto mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-left text-xs text-red-900 space-y-2">
+                {authErrorCode === 'auth/unauthorized-domain' ? (
+                  <>
+                    <p className="font-bold text-red-800">
+                      เข้าสู่ระบบไม่สำเร็จ: โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Authentication
+                    </p>
+                    <p>
+                      กรุณานำชื่อโดเมน{' '}
+                      <code className="px-1.5 py-0.5 rounded bg-red-100 font-mono font-semibold text-red-950 select-all">
+                        {typeof window !== 'undefined' ? window.location.hostname : 'your-app.vercel.app'}
+                      </code>{' '}
+                      ไปเพิ่มใน Firebase Console → Authentication → Settings → Authorized domains
+                    </p>
+                    <p>
+                      <a
+                        href="https://console.firebase.google.com/project/gen-lang-client-0929613659/authentication/settings"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold underline text-red-800 hover:text-red-950"
+                      >
+                        เปิดหน้าตั้งค่า Authorized domains ใน Firebase Console
+                      </a>
+                    </p>
+                  </>
+                ) : authErrorCode === 'auth/popup-closed-by-user' ||
+                  authErrorCode === 'auth/cancelled-popup-request' ? (
+                  <p className="font-medium">
+                    ปิดหน้าต่างเข้าสู่ระบบ Google ก่อนดำเนินการเสร็จสิ้น กรุณากดปุ่มเข้าสู่ระบบใหม่อีกครั้ง
+                  </p>
+                ) : (
+                  <p className="font-medium break-all">
+                    ไม่สามารถเข้าสู่ระบบได้ ({authErrorCode})
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         ) : !isAdmin ? (
           <div className="p-10 text-center space-y-3">
