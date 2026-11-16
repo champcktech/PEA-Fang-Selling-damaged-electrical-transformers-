@@ -241,3 +241,49 @@ export function formatThaiDateTime(value: string): string {
   }
   return `${day} ${monthName} ${yearBe}`;
 }
+
+export type AnnouncementStatusKey = 'upcoming' | 'active' | 'ended';
+
+export interface AnnouncementStatusInfo {
+  key: AnnouncementStatusKey;
+  label: string;
+}
+
+export function parseThaiDateTimeMs(
+  value: string,
+  fallbackEndOfDay = false
+): number | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const match = trimmed.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (match) {
+    const [, y, m, d, hh, mm, ss] = match;
+    const hour = hh ?? (fallbackEndOfDay ? '23' : '00');
+    const minute = mm ?? (fallbackEndOfDay ? '59' : '00');
+    const second = ss ?? (fallbackEndOfDay ? '59' : '00');
+    const ms = Date.parse(`${y}-${m}-${d}T${hour}:${minute}:${second}+07:00`);
+    return Number.isNaN(ms) ? null : ms;
+  }
+  const parsed = Date.parse(trimmed);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+export function getAnnouncementStatus(
+  lot: Pick<TransformerLot, 'startDate' | 'endDate' | 'bidOpeningAt'>,
+  nowMs: number = Date.now()
+): AnnouncementStatusInfo {
+  const startMs = parseThaiDateTimeMs(lot.startDate, false);
+  const endMs =
+    parseThaiDateTimeMs(lot.endDate, true) ??
+    parseThaiDateTimeMs(lot.bidOpeningAt, true);
+
+  if (endMs !== null && nowMs > endMs) {
+    return { key: 'ended', label: 'เสร็จสิ้นแล้ว' };
+  }
+  if (startMs !== null && nowMs < startMs) {
+    return { key: 'upcoming', label: 'ยังไม่เริ่มประกาศ' };
+  }
+  return { key: 'active', label: 'อยู่ในช่วงประกาศ' };
+}

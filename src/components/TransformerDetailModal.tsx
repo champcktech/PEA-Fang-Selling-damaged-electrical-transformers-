@@ -6,7 +6,10 @@ import {
   TransformerLot,
   TransformerUnit,
   formatThaiDateTime,
+  getAnnouncementStatus,
 } from '../data/transformers';
+import { useNowTimestamp } from '../hooks/useNowTimestamp';
+import { AnnouncementStatusBadge } from './AnnouncementStatusBadge';
 import { ResilientImage } from './ResilientImage';
 
 interface TransformerDetailModalProps {
@@ -20,6 +23,7 @@ export function TransformerDetailModal({
   lot,
   onClose,
 }: TransformerDetailModalProps) {
+  const nowMs = useNowTimestamp();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [copiedSpec, setCopiedSpec] = useState(false);
 
@@ -214,9 +218,15 @@ export function TransformerDetailModal({
 
               {lot && (
                 <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 mb-6 space-y-2.5">
-                  <h4 className="text-xs font-bold text-amber-950">
-                    กำหนดการของประกาศนี้
-                  </h4>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="text-xs font-bold text-amber-950">
+                      กำหนดการของประกาศนี้
+                    </h4>
+                    <AnnouncementStatusBadge
+                      status={getAnnouncementStatus(lot, nowMs)}
+                      size="sm"
+                    />
+                  </div>
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between gap-3">
                       <span className="inline-flex items-center gap-1.5 text-slate-700 font-medium">

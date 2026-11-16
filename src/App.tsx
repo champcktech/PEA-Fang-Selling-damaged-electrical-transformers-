@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Building2, Calendar, Clock, Gavel, MapPin, Phone, Search } from 'lucide-react';
+import { Building2, Calendar, Clock, Gavel, MapPin, Phone, QrCode, Search } from 'lucide-react';
 import { AdminConsoleModal } from './components/AdminConsoleModal';
+import { AnnouncementStatusBadge } from './components/AnnouncementStatusBadge';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { TransformerCard } from './components/TransformerCard';
@@ -10,12 +11,15 @@ import {
   TransformerLot,
   TransformerUnit,
   formatThaiDateTime,
+  getAnnouncementStatus,
 } from './data/transformers';
+import { useNowTimestamp } from './hooks/useNowTimestamp';
 
 type SortOption = 'kva-desc' | 'kva-asc' | 'pea-asc';
 
 export default function App() {
   const { lots, units } = useFirebase();
+  const nowMs = useNowTimestamp();
 
   const [selectedLotId, setSelectedLotId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,22 +118,40 @@ export default function App() {
               >
                 ทั้งหมด ({lots.length} ประกาศ)
               </button>
-              {lots.map((lot) => (
-                <button
-                  key={lot.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selectedLotId === lot.id}
-                  onClick={() => setSelectedLotId(lot.id)}
-                  className={`px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                    selectedLotId === lot.id
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {lot.shortLabel}
-                </button>
-              ))}
+              {lots.map((lot) => {
+                const lotStatus = getAnnouncementStatus(lot, nowMs);
+                const dotColor =
+                  lotStatus.key === 'active'
+                    ? 'bg-emerald-600'
+                    : lotStatus.key === 'ended'
+                    ? 'bg-slate-400'
+                    : 'bg-amber-500';
+                return (
+                  <button
+                    key={lot.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selectedLotId === lot.id}
+                    onClick={() => setSelectedLotId(lot.id)}
+                    className={`px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      selectedLotId === lot.id
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`}
+                        aria-hidden="true"
+                      />
+                      <span>{lot.shortLabel}</span>
+                      <span className="text-[11px] font-medium opacity-75">
+                        ({lotStatus.label})
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Search & Sort Bar */}
@@ -185,15 +207,19 @@ export default function App() {
             ) : (
               groupedByLot.map(({ lot, units: lotUnits }) => {
                 const lotStockSum = lotUnits.reduce((sum, u) => sum + u.stockQty, 0);
+                const lotStatus = getAnnouncementStatus(lot, nowMs);
                 return (
                   <div key={lot.id} className="space-y-5">
                     {/* Lot Header Bar */}
                     <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
                       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                         <div className="space-y-1.5">
-                          <p className="text-xs text-slate-500">
-                            {lot.sourceLocation}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <AnnouncementStatusBadge status={lotStatus} size="md" />
+                            <p className="text-xs text-slate-500">
+                              {lot.sourceLocation}
+                            </p>
+                          </div>
                           <h3 className="font-display text-xl font-bold text-slate-900">
                             {lot.shortLabel}
                           </h3>
@@ -260,6 +286,7 @@ export default function App() {
                         <TransformerCard
                           key={unit.id}
                           unit={unit}
+                          announcementStatus={lotStatus}
                           onInspect={setInspectedUnit}
                         />
                       ))}
@@ -282,37 +309,61 @@ export default function App() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
-                <Building2 className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">หน่วยงานรับผิดชอบ</p>
-                  <p className="text-sm font-semibold text-slate-900 leading-relaxed">
-                    แผนกมิเตอร์และหม้อแปลง การไฟฟ้าส่วนภูมิภาคสาขาฝาง
-                  </p>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2 p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                  <Building2 className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">หน่วยงานรับผิดชอบ</p>
+                    <p className="text-sm font-semibold text-slate-900 leading-relaxed">
+                      แผนกมิเตอร์และหม้อแปลง การไฟฟ้าส่วนภูมิภาคสาขาฝาง
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                  <MapPin className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">ที่อยู่</p>
+                    <p className="text-sm font-semibold text-slate-900 leading-relaxed">
+                      343 หมู่ 4 ตำบลเวียง อำเภอฝาง จังหวัดเชียงใหม่ 50110
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
+                  <Phone className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">โทรศัพท์ติดต่อ</p>
+                    <a
+                      href="tel:053452170"
+                      className="font-mono text-base font-bold text-slate-900 hover:text-amber-700 transition-colors tabular-nums"
+                    >
+                      053452170
+                    </a>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
-                <MapPin className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">ที่อยู่</p>
-                  <p className="text-sm font-semibold text-slate-900 leading-relaxed">
-                    343 หมู่ 4 ตำบลเวียง อำเภอฝาง จังหวัดเชียงใหม่ 50110
-                  </p>
+              <div className="lg:col-span-4 p-5 rounded-xl bg-slate-50 border border-amber-300/80 flex flex-col sm:flex-row lg:flex-row items-center gap-4">
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-xs shrink-0">
+                  <img
+                    src="/assets/aistudio/qr_d55bc5c1.png"
+                    alt="QR Code พิกัดลานหม้อแปลง กฟส.ฝาง"
+                    className="w-32 h-32 object-contain"
+                  />
                 </div>
-              </div>
-
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5">
-                <Phone className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">โทรศัพท์ติดต่อ</p>
-                  <a
-                    href="tel:053452170"
-                    className="font-mono text-base font-bold text-slate-900 hover:text-amber-700 transition-colors tabular-nums"
-                  >
-                    053452170
-                  </a>
+                <div className="text-center sm:text-left space-y-1.5 min-w-0">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                    <QrCode className="w-4 h-4 text-amber-700 shrink-0" aria-hidden="true" />
+                    <span>พิกัดลานหม้อแปลง</span>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    ลานหม้อแปลง กฟส.ฝาง
+                  </p>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    สแกน QR Code เพื่อเปิดแผนที่นำทางไปยังจุดดูสภาพหม้อแปลง
+                  </p>
                 </div>
               </div>
             </div>

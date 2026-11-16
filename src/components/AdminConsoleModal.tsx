@@ -11,7 +11,9 @@ import {
   TransformerPhase,
   TransformerUnit,
   formatThaiDateTime,
+  getAnnouncementStatus,
 } from '../data/transformers';
+import { useNowTimestamp } from '../hooks/useNowTimestamp';
 import {
   clearAllCatalogInFirestore,
   deleteLotFromFirestore,
@@ -20,6 +22,7 @@ import {
   saveTransformerToFirestore,
   seedInitialCatalogToFirestore,
 } from '../lib/firebase';
+import { AnnouncementStatusBadge } from './AnnouncementStatusBadge';
 import { ResilientImage } from './ResilientImage';
 
 interface AdminConsoleModalProps {
@@ -116,6 +119,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
     isUsingFirestoreData,
   } = useFirebase();
 
+  const nowMs = useNowTimestamp();
   const [activeTab, setActiveTab] = useState<AdminTab>('transformers');
   const [busyMessage, setBusyMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -679,6 +683,23 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                         />
                       </div>
 
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 text-xs">
+                        <span className="text-slate-600 font-medium">
+                          สถานะอัตโนมัติตามเวลาที่ระบุ:
+                        </span>
+                        <AnnouncementStatusBadge
+                          status={getAnnouncementStatus(
+                            {
+                              startDate: lotStartDate,
+                              endDate: lotEndDate,
+                              bidOpeningAt: lotBidOpeningAt,
+                            },
+                            nowMs
+                          )}
+                          size="sm"
+                        />
+                      </div>
+
                       <button
                         type="submit"
                         disabled={Boolean(busyMessage)}
@@ -706,9 +727,15 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                             className="p-4 flex items-start justify-between gap-4"
                           >
                             <div className="min-w-0 space-y-1">
-                              <p className="text-sm font-semibold text-slate-900">
-                                {lot.shortLabel}
-                              </p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {lot.shortLabel}
+                                </p>
+                                <AnnouncementStatusBadge
+                                  status={getAnnouncementStatus(lot, nowMs)}
+                                  size="sm"
+                                />
+                              </div>
                               <p className="text-xs text-slate-500">
                                 {lot.sourceLocation}
                               </p>

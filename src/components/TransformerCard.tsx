@@ -1,13 +1,23 @@
 import { Eye } from 'lucide-react';
-import { TRANSFORMER_WATERMARK_TEXT, TransformerUnit } from '../data/transformers';
+import {
+  AnnouncementStatusInfo,
+  TRANSFORMER_WATERMARK_TEXT,
+  TransformerUnit,
+} from '../data/transformers';
+import { AnnouncementStatusBadge } from './AnnouncementStatusBadge';
 import { ResilientImage } from './ResilientImage';
 
 interface TransformerCardProps {
   unit: TransformerUnit;
+  announcementStatus?: AnnouncementStatusInfo;
   onInspect: (unit: TransformerUnit) => void;
 }
 
-export function TransformerCard({ unit, onInspect }: TransformerCardProps) {
+export function TransformerCard({
+  unit,
+  announcementStatus,
+  onInspect,
+}: TransformerCardProps) {
   const cardTitle = `หม้อแปลงขนาด ${unit.kva.toLocaleString('th-TH')} kVA · ${unit.phase}`;
 
   return (
@@ -34,9 +44,14 @@ export function TransformerCard({ unit, onInspect }: TransformerCardProps) {
       </button>
 
       <div className="p-5 flex-1 flex flex-col">
-        <p className="text-xs font-mono text-amber-800 font-semibold mb-1.5 truncate">
-          PEA No. {unit.peaNo}
-        </p>
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-xs font-mono text-amber-800 font-semibold truncate">
+            PEA No. {unit.peaNo}
+          </p>
+          {announcementStatus && (
+            <AnnouncementStatusBadge status={announcementStatus} size="sm" />
+          )}
+        </div>
 
         <h3 className="text-base font-semibold text-slate-900 leading-snug mb-2">
           <button
