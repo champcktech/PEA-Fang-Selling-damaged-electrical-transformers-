@@ -72,13 +72,20 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    const lotsQuery = query(collection(db, 'lots'), orderBy('code', 'asc'));
+    const lotsQuery = query(collection(db, 'lots'));
     const unsubscribeLots = onSnapshot(
       lotsQuery,
       (snapshot) => {
-        const nextLots = snapshot.docs.map((d) =>
-          mapDocToTransformerLot(d.data() as Record<string, unknown>, d.id)
-        );
+        const nextLots = snapshot.docs
+          .map((d) =>
+            mapDocToTransformerLot(d.data() as Record<string, unknown>, d.id)
+          )
+          .sort((a, b) =>
+            (a.startDate || a.shortLabel).localeCompare(
+              b.startDate || b.shortLabel,
+              'th'
+            )
+          );
         setFirestoreLots(nextLots);
         setLotsLoaded(true);
       },

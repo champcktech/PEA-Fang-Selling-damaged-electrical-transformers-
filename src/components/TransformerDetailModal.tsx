@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Check, Copy, X } from 'lucide-react';
-import { TransformerUnit, formatThb } from '../data/transformers';
+import { Check, Copy, X } from 'lucide-react';
+import { PHOTO_SLOT_LABELS, TransformerUnit } from '../data/transformers';
 import { ResilientImage } from './ResilientImage';
 
 interface TransformerDetailModalProps {
@@ -32,17 +32,14 @@ export function TransformerDetailModal({
   if (!unit) return null;
 
   const activeImage = unit.images[activeImageIdx] || unit.images[0];
+  const headingTitle = `หม้อแปลงขนาด ${unit.kva.toLocaleString('th-TH')} kVA`;
 
   const handleCopySpec = async () => {
     const specText = [
-      `${unit.title} (${unit.lotCode} / รหัสทรัพย์สิน: ${unit.peaAssetNo})`,
-      `ยี่ห้อ: ${unit.brand} · ปีผลิต: ${unit.year}`,
-      `ชนิด: ${unit.typeLabelTh} · สภาพ: ${unit.condition}`,
-      `อาการชำรุด: ${unit.damageDetail}`,
-      `พิกัด: ${unit.kva.toLocaleString('th-TH')} kVA · แรงดัน: ${unit.primaryVoltage} / ${unit.secondaryVoltage}`,
-      `Vector Group: ${unit.vectorGroup} · ความถี่: ${unit.frequency} · ${unit.phase}`,
-      `ขนาด: ${unit.dimensionsMm} · น้ำหนัก: ${unit.weightKg.toLocaleString('th-TH')} กก.`,
-      `ราคาตั้งขายตามสภาพ: ${formatThb(unit.priceThb)} (จำนวน ${unit.stockQty} เครื่อง)`,
+      `PEA No.: ${unit.peaNo} (${unit.lotCode})`,
+      `พิกัดกำลังไฟฟ้า: ${unit.kva.toLocaleString('th-TH')} kVA`,
+      `จำนวน: ${unit.stockQty} เครื่อง`,
+      `รายละเอียดเพิ่มเติม: ${unit.summaryNote}`,
     ].join('\n');
 
     try {
@@ -55,17 +52,9 @@ export function TransformerDetailModal({
   };
 
   const specs: Array<{ label: string; value: string; mono?: boolean }> = [
-    { label: 'รหัสทรัพย์สิน กฟภ.', value: unit.peaAssetNo, mono: true },
-    { label: 'รหัสรายการ / ล็อต', value: `${unit.sku} · ${unit.lotCode}`, mono: true },
-    { label: 'ผู้ผลิต / ยี่ห้อ', value: unit.brand },
-    { label: 'ชนิดหม้อแปลง', value: unit.typeLabelTh },
+    { label: 'PEA No.', value: unit.peaNo, mono: true },
+    { label: 'ล็อตสินค้า', value: unit.lotCode },
     { label: 'พิกัดกำลังไฟฟ้า', value: `${unit.kva.toLocaleString('th-TH')} kVA`, mono: true },
-    { label: 'แรงดันด้านสูง / ต่ำ', value: `${unit.primaryVoltage} / ${unit.secondaryVoltage}`, mono: true },
-    { label: 'Vector Group / เฟส', value: `${unit.vectorGroup} · ${unit.phase} · ${unit.frequency}`, mono: true },
-    { label: 'ระบบระบายความร้อน', value: unit.cooling },
-    { label: 'ปีที่ผลิต', value: `${unit.year}`, mono: true },
-    { label: 'ขนาด (ก × ย × ส)', value: unit.dimensionsMm, mono: true },
-    { label: 'น้ำหนักรวมโดยประมาณ', value: `${unit.weightKg.toLocaleString('th-TH')} กก.`, mono: true },
     { label: 'จำนวนในล็อต', value: `${unit.stockQty} เครื่อง`, mono: true },
   ];
 
@@ -84,10 +73,10 @@ export function TransformerDetailModal({
         <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-2 text-xs text-slate-600 min-w-0">
             <span className="font-mono font-semibold text-slate-900 whitespace-nowrap">
-              {unit.lotCode}
+              {unit.peaNo}
             </span>
             <span aria-hidden="true">·</span>
-            <span className="truncate">{unit.condition}</span>
+            <span className="truncate">{unit.lotCode}</span>
           </div>
           <button
             type="button"
@@ -101,84 +90,62 @@ export function TransformerDetailModal({
 
         <div className="overflow-y-auto p-6 lg:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left: Multi-image Gallery */}
+            {/* Left: 3-Angle Gallery */}
             <div className="lg:col-span-6 space-y-4">
               <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
                 <ResilientImage
                   src={activeImage?.url || ''}
-                  alt={activeImage?.caption || unit.title}
-                  fallbackTitle={unit.title}
+                  alt={activeImage?.caption || headingTitle}
+                  fallbackTitle={`PEA No. ${unit.peaNo}`}
                   className="w-full h-full object-cover"
                 />
               </div>
 
-              {activeImage?.caption && (
-                <p className="text-xs text-slate-600 font-medium">
-                  คำอธิบายภาพ: {activeImage.caption}
-                </p>
-              )}
+              <p className="text-xs text-slate-700 font-semibold">
+                {activeImage?.caption || PHOTO_SLOT_LABELS[activeImageIdx] || ''}
+              </p>
 
-              {unit.images.length > 1 && (
-                <div className="grid grid-cols-3 gap-3">
-                  {unit.images.map((img, index) => (
-                    <button
-                      key={`${unit.id}-img-${index}`}
-                      type="button"
-                      onClick={() => setActiveImageIdx(index)}
-                      className={`aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
-                        activeImageIdx === index
-                          ? 'border-amber-600 ring-2 ring-amber-600/20'
-                          : 'border-slate-200 opacity-80 hover:opacity-100'
-                      }`}
-                    >
+              <div className="grid grid-cols-3 gap-3">
+                {unit.images.map((img, index) => (
+                  <button
+                    key={`${unit.id}-img-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIdx(index)}
+                    className={`flex flex-col text-left rounded-lg overflow-hidden border-2 transition-all cursor-pointer bg-slate-50 ${
+                      activeImageIdx === index
+                        ? 'border-amber-600 ring-2 ring-amber-600/20'
+                        : 'border-slate-200 opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100">
                       <ResilientImage
                         src={img.url}
-                        alt={img.caption}
-                        fallbackTitle={`มุมภาพ ${index + 1}`}
+                        alt={img.caption || PHOTO_SLOT_LABELS[index] || `มุมภาพ ${index + 1}`}
+                        fallbackTitle={PHOTO_SLOT_LABELS[index] || `มุมภาพ ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="pt-4 border-t border-slate-200">
-                <h4 className="text-sm font-semibold text-slate-900 mb-2">
-                  หมายเหตุสภาพเครื่องเพิ่มเติม
-                </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {unit.summaryNote}
-                </p>
+                    </div>
+                    <span className="px-2 py-1.5 text-[11px] font-medium text-slate-700 truncate w-full">
+                      {img.caption || PHOTO_SLOT_LABELS[index]}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Right: View-only Technical Details */}
+            {/* Right: View-only Details */}
             <div className="lg:col-span-6 flex flex-col">
-              <h2
-                id="modal-transformer-title"
-                className="font-display text-2xl font-bold text-slate-900 leading-tight mb-3"
-              >
-                {unit.title}
-              </h2>
-
-              <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200/80 flex items-start gap-2.5 text-sm text-amber-950 mb-5">
-                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
                 <div>
-                  <p className="font-semibold text-xs text-amber-900">
-                    สภาพความชำรุดที่ตรวจพบ ({unit.condition})
+                  <p className="text-xs font-mono font-semibold text-amber-800 mb-1">
+                    PEA No. {unit.peaNo}
                   </p>
-                  <p className="text-sm font-medium mt-0.5">{unit.damageDetail}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-baseline justify-between gap-4 pb-5 mb-5 border-b border-slate-200">
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">
-                    ราคาตั้งขายตามสภาพ (ต่อเครื่อง)
-                  </p>
-                  <p className="font-mono text-3xl font-bold text-slate-900 tabular-nums">
-                    {formatThb(unit.priceThb)}
-                  </p>
+                  <h2
+                    id="modal-transformer-title"
+                    className="font-display text-2xl font-bold text-slate-900 leading-tight"
+                  >
+                    {headingTitle}
+                  </h2>
                 </div>
 
                 <button
@@ -201,14 +168,14 @@ export function TransformerDetailModal({
               </div>
 
               <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                ข้อมูลจำเพาะหม้อแปลงเบื้องต้น
+                ข้อมูลหม้อแปลงเบื้องต้น
               </h3>
 
               <dl className="divide-y divide-slate-100 border-y border-slate-200 text-sm mb-6">
                 {specs.map((row) => (
                   <div
                     key={row.label}
-                    className="py-2.5 grid grid-cols-12 gap-3 items-baseline"
+                    className="py-3 grid grid-cols-12 gap-3 items-baseline"
                   >
                     <dt className="col-span-5 text-slate-500 text-xs sm:text-sm">
                       {row.label}
@@ -223,6 +190,15 @@ export function TransformerDetailModal({
                   </div>
                 ))}
               </dl>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6">
+                <h4 className="text-xs font-semibold text-slate-800 mb-1.5">
+                  รายละเอียดเพิ่มเติม
+                </h4>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {unit.summaryNote}
+                </p>
+              </div>
 
               <div className="mt-auto">
                 <button

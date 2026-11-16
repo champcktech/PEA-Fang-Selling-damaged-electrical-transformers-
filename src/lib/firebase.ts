@@ -13,11 +13,11 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import {
+  HERO_IMAGE,
   LOTS,
+  PHOTO_SLOT_LABELS,
   TRANSFORMER_UNITS,
-  TransformerCondition,
   TransformerLot,
-  TransformerType,
   TransformerUnit,
 } from '../data/transformers';
 
@@ -27,6 +27,12 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export const ADMIN_EMAIL = 'champ5698@gmail.com';
+
+const DEFAULT_SLOT_IMAGES = [
+  '/images/lot_pole_mounted_1794794274166.jpg',
+  HERO_IMAGE,
+  '/images/detail_nameplate_bushing_1794794276341.jpg',
+];
 
 export enum OperationType {
   CREATE = 'create',
@@ -114,12 +120,11 @@ export async function seedInitialCatalogToFirestore(options?: {
     const lotRef = doc(db, 'lots', lot.id);
     batch.set(lotRef, {
       id: lot.id,
-      code: lot.code.slice(0, 40),
-      name: lot.name.slice(0, 160),
-      shortLabel: lot.shortLabel.slice(0, 80),
+      shortLabel: lot.shortLabel.slice(0, 120),
       sourceLocation: lot.sourceLocation.slice(0, 160),
-      inspectedDate: lot.inspectedDate.slice(0, 60),
-      kvaRange: lot.kvaRange.slice(0, 60),
+      startDate: lot.startDate.slice(0, 60),
+      endDate: lot.endDate.slice(0, 60),
+      bidOpeningAt: lot.bidOpeningAt.slice(0, 60),
       description: lot.description.slice(0, 1000),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -131,30 +136,15 @@ export async function seedInitialCatalogToFirestore(options?: {
     batch.set(unitRef, {
       id: unit.id,
       lotId: unit.lotId,
-      lotCode: unit.lotCode.slice(0, 40),
-      sku: unit.sku.slice(0, 40),
-      peaAssetNo: unit.peaAssetNo.slice(0, 60),
-      title: unit.title.slice(0, 180),
-      brand: unit.brand.slice(0, 80),
-      type: unit.type,
-      typeLabelTh: unit.typeLabelTh.slice(0, 80),
-      condition: unit.condition,
-      damageDetail: unit.damageDetail.slice(0, 240),
+      lotCode: unit.lotCode.slice(0, 80),
+      peaNo: unit.peaNo.trim().toUpperCase(),
       kva: unit.kva,
-      primaryVoltage: unit.primaryVoltage.slice(0, 40),
-      secondaryVoltage: unit.secondaryVoltage.slice(0, 40),
-      vectorGroup: unit.vectorGroup.slice(0, 30),
-      frequency: unit.frequency.slice(0, 20),
-      phase: unit.phase.slice(0, 30),
-      cooling: unit.cooling.slice(0, 80),
-      year: unit.year,
-      weightKg: unit.weightKg,
-      dimensionsMm: unit.dimensionsMm.slice(0, 80),
       stockQty: unit.stockQty,
-      priceThb: unit.priceThb,
       summaryNote: unit.summaryNote.slice(0, 1000),
-      imageUrls: unit.images.slice(0, 6).map((img) => img.url.slice(0, 500)),
-      imageCaptions: unit.images.slice(0, 6).map((img) => img.caption.slice(0, 200)),
+      imageUrls: [0, 1, 2].map((idx) =>
+        (unit.images[idx]?.url || DEFAULT_SLOT_IMAGES[idx]).slice(0, 280000)
+      ),
+      imageCaptions: [...PHOTO_SLOT_LABELS],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -206,12 +196,11 @@ export async function saveLotToFirestore(
       const batch = writeBatch(db);
       batch.set(doc(db, 'lots', id), {
         id,
-        code: lot.code.trim().slice(0, 40),
-        name: lot.name.trim().slice(0, 160),
-        shortLabel: lot.shortLabel.trim().slice(0, 80),
+        shortLabel: lot.shortLabel.trim().slice(0, 120),
         sourceLocation: lot.sourceLocation.trim().slice(0, 160),
-        inspectedDate: lot.inspectedDate.trim().slice(0, 60),
-        kvaRange: lot.kvaRange.trim().slice(0, 60),
+        startDate: lot.startDate.trim().slice(0, 60),
+        endDate: lot.endDate.trim().slice(0, 60),
+        bidOpeningAt: lot.bidOpeningAt.trim().slice(0, 60),
         description: lot.description.trim().slice(0, 1000),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -223,12 +212,11 @@ export async function saveLotToFirestore(
       await batch.commit();
     } else {
       await updateDoc(doc(db, 'lots', id), {
-        code: lot.code.trim().slice(0, 40),
-        name: lot.name.trim().slice(0, 160),
-        shortLabel: lot.shortLabel.trim().slice(0, 80),
+        shortLabel: lot.shortLabel.trim().slice(0, 120),
         sourceLocation: lot.sourceLocation.trim().slice(0, 160),
-        inspectedDate: lot.inspectedDate.trim().slice(0, 60),
-        kvaRange: lot.kvaRange.trim().slice(0, 60),
+        startDate: lot.startDate.trim().slice(0, 60),
+        endDate: lot.endDate.trim().slice(0, 60),
+        bidOpeningAt: lot.bidOpeningAt.trim().slice(0, 60),
         description: lot.description.trim().slice(0, 1000),
         updatedAt: serverTimestamp(),
       });
@@ -264,29 +252,12 @@ export interface SaveTransformerInput {
   id?: string;
   lotId: string;
   lotCode: string;
-  sku: string;
-  peaAssetNo: string;
-  title: string;
-  brand: string;
-  type: TransformerType;
-  typeLabelTh: string;
-  condition: TransformerCondition;
-  damageDetail: string;
+  peaNo: string;
   kva: number;
-  primaryVoltage: string;
-  secondaryVoltage: string;
-  vectorGroup: string;
-  frequency: string;
-  phase: string;
-  cooling: string;
-  year: number;
-  weightKg: number;
-  dimensionsMm: string;
   stockQty: number;
-  priceThb: number;
   summaryNote: string;
-  imageUrls: string[];
-  imageCaptions: string[];
+  imageUrls: [string, string, string];
+  imageCaptions?: [string, string, string];
 }
 
 export async function saveTransformerToFirestore(
@@ -295,40 +266,20 @@ export async function saveTransformerToFirestore(
 ): Promise<string> {
   const id = sanitizeId(input.id || `tr-${Date.now()}`);
   const path = `transformers/${id}`;
-  const urls = input.imageUrls.filter(Boolean).slice(0, 6);
-  const captions = input.imageCaptions.slice(0, 6);
-  const safeUrls =
-    urls.length > 0
-      ? urls.map((u) => u.trim().slice(0, 500))
-      : ['/src/assets/images/lot_pole_mounted_1794794274166.jpg'];
-  const safeCaptions =
-    captions.length === safeUrls.length
-      ? captions.map((c) => (c.trim() || input.title).slice(0, 200))
-      : safeUrls.map((_, idx) => `${input.title.slice(0, 140)} (รูปที่ ${idx + 1})`);
+  const safeUrls = [0, 1, 2].map((idx) => {
+    const raw = input.imageUrls[idx]?.trim() || DEFAULT_SLOT_IMAGES[idx];
+    return raw.slice(0, 280000);
+  });
+  const safeCaptions = [0, 1, 2].map((idx) =>
+    (input.imageCaptions?.[idx]?.trim() || PHOTO_SLOT_LABELS[idx]).slice(0, 200)
+  );
 
   const basePayload = {
     lotId: input.lotId,
-    lotCode: input.lotCode.trim().slice(0, 40),
-    sku: input.sku.trim().slice(0, 40),
-    peaAssetNo: input.peaAssetNo.trim().slice(0, 60),
-    title: input.title.trim().slice(0, 180),
-    brand: input.brand.trim().slice(0, 80),
-    type: input.type,
-    typeLabelTh: input.typeLabelTh.trim().slice(0, 80),
-    condition: input.condition,
-    damageDetail: input.damageDetail.trim().slice(0, 240),
+    lotCode: input.lotCode.trim().slice(0, 80),
+    peaNo: input.peaNo.trim().toUpperCase().slice(0, 11),
     kva: Math.max(1, Math.min(100000, Number(input.kva) || 100)),
-    primaryVoltage: input.primaryVoltage.trim().slice(0, 40),
-    secondaryVoltage: input.secondaryVoltage.trim().slice(0, 40),
-    vectorGroup: input.vectorGroup.trim().slice(0, 30),
-    frequency: input.frequency.trim().slice(0, 20),
-    phase: input.phase.trim().slice(0, 30),
-    cooling: input.cooling.trim().slice(0, 80),
-    year: Math.max(1970, Math.min(2100, Number(input.year) || 2015)),
-    weightKg: Math.max(10, Math.min(100000, Number(input.weightKg) || 800)),
-    dimensionsMm: input.dimensionsMm.trim().slice(0, 80),
     stockQty: Math.max(0, Math.min(1000, Number(input.stockQty) || 0)),
-    priceThb: Math.max(0, Math.min(100000000, Number(input.priceThb) || 0)),
     summaryNote: input.summaryNote.trim().slice(0, 1000),
     imageUrls: safeUrls,
     imageCaptions: safeCaptions,
@@ -363,12 +314,11 @@ export async function deleteTransformerFromFirestore(unitId: string): Promise<vo
 export function mapDocToTransformerLot(data: Record<string, unknown>, id: string): TransformerLot {
   return {
     id,
-    code: String(data.code || ''),
-    name: String(data.name || ''),
-    shortLabel: String(data.shortLabel || ''),
+    shortLabel: String(data.shortLabel || data.name || data.code || id),
     sourceLocation: String(data.sourceLocation || ''),
-    inspectedDate: String(data.inspectedDate || ''),
-    kvaRange: String(data.kvaRange || ''),
+    startDate: String(data.startDate || ''),
+    endDate: String(data.endDate || ''),
+    bidOpeningAt: String(data.bidOpeningAt || ''),
     description: String(data.description || ''),
   };
 }
@@ -386,32 +336,17 @@ export function mapDocToTransformerUnit(
     id,
     lotId: String(data.lotId || ''),
     lotCode: String(data.lotCode || ''),
-    sku: String(data.sku || ''),
-    peaAssetNo: String(data.peaAssetNo || '-'),
-    title: String(data.title || ''),
-    brand: String(data.brand || ''),
-    type: (data.type as TransformerType) || 'Oil-Immersed',
-    typeLabelTh: String(data.typeLabelTh || ''),
-    condition:
-      (data.condition as TransformerCondition) || 'เก่า ชำรุด (ขายตามสภาพ)',
-    damageDetail: String(data.damageDetail || '-'),
+    peaNo: String(data.peaNo || data.peaAssetNo || '-'),
     kva: Number(data.kva || 0),
-    primaryVoltage: String(data.primaryVoltage || ''),
-    secondaryVoltage: String(data.secondaryVoltage || ''),
-    vectorGroup: String(data.vectorGroup || ''),
-    frequency: String(data.frequency || '50 Hz'),
-    phase: String(data.phase || '3 เฟส'),
-    cooling: String(data.cooling || ''),
-    year: Number(data.year || 2015),
-    weightKg: Number(data.weightKg || 0),
-    dimensionsMm: String(data.dimensionsMm || ''),
     stockQty: Number(data.stockQty || 0),
-    priceThb: Number(data.priceThb || 0),
     summaryNote: String(data.summaryNote || ''),
-    images: urls.map((url, idx) => ({
-      url,
-      caption: captions[idx] || String(data.title || ''),
-    })),
+    images: [0, 1, 2].map((idx) => {
+      const rawUrl = urls[idx] || DEFAULT_SLOT_IMAGES[idx];
+      return {
+        url: rawUrl.replace(/^\/src\/assets\/images\//, '/images/'),
+        caption: captions[idx] || PHOTO_SLOT_LABELS[idx],
+      };
+    }),
   };
 }
 

@@ -1,20 +1,23 @@
 import { useMemo, useState } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { AdminConsoleModal } from './components/AdminConsoleModal';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { TransformerCard } from './components/TransformerCard';
 import { TransformerDetailModal } from './components/TransformerDetailModal';
 import { useFirebase } from './contexts/FirebaseContext';
-import { TransformerLot, TransformerType, TransformerUnit } from './data/transformers';
+import {
+  TransformerLot,
+  TransformerUnit,
+  formatThaiDateTime,
+} from './data/transformers';
 
-type SortOption = 'kva-desc' | 'kva-asc' | 'price-asc' | 'price-desc';
+type SortOption = 'kva-desc' | 'kva-asc' | 'pea-asc';
 
 export default function App() {
   const { lots, units } = useFirebase();
 
   const [selectedLotId, setSelectedLotId] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<'all' | TransformerType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('kva-desc');
 
@@ -30,10 +33,9 @@ export default function App() {
     const q = searchQuery.trim().toLowerCase();
     const list = units.filter((unit) => {
       if (selectedLotId !== 'all' && unit.lotId !== selectedLotId) return false;
-      if (selectedType !== 'all' && unit.type !== selectedType) return false;
       if (q) {
         const haystack =
-          `${unit.title} ${unit.brand} ${unit.sku} ${unit.peaAssetNo} ${unit.lotCode} ${unit.damageDetail} ${unit.kva} kva ${unit.typeLabelTh}`.toLowerCase();
+          `${unit.peaNo} ${unit.lotCode} ${unit.kva} kva ${unit.summaryNote}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -42,10 +44,9 @@ export default function App() {
     return [...list].sort((a, b) => {
       if (sortBy === 'kva-desc') return b.kva - a.kva;
       if (sortBy === 'kva-asc') return a.kva - b.kva;
-      if (sortBy === 'price-asc') return a.priceThb - b.priceThb;
-      return b.priceThb - a.priceThb;
+      return a.peaNo.localeCompare(b.peaNo);
     });
-  }, [units, selectedLotId, selectedType, searchQuery, sortBy]);
+  }, [units, selectedLotId, searchQuery, sortBy]);
 
   const groupedByLot = useMemo(() => {
     const groups: Array<{ lot: TransformerLot; units: TransformerUnit[] }> = [];
@@ -61,7 +62,6 @@ export default function App() {
 
   const handleClearFilters = () => {
     setSelectedLotId('all');
-    setSelectedType('all');
     setSearchQuery('');
     setSortBy('kva-desc');
   };
@@ -132,9 +132,9 @@ export default function App() {
               ))}
             </div>
 
-            {/* Search, Type Filter & Sort Bar */}
+            {/* Search & Sort Bar */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-              <div className="md:col-span-6 relative">
+              <div className="md:col-span-8 relative">
                 <Search
                   className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   aria-hidden="true"
@@ -143,33 +143,13 @@ export default function App() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ค้นหาตามขนาด kVA, รหัสทรัพย์สิน กฟภ., ยี่ห้อ หรืออาการชำรุด..."
+                  placeholder="ค้นหาตาม PEA No. (TRxx-xxxxxx), ขนาด kVA หรือรายละเอียด..."
                   aria-label="ค้นหาหม้อแปลงไฟฟ้า"
                   className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-2 focus:outline-amber-600"
                 />
               </div>
 
-              <div className="md:col-span-3 relative">
-                <SlidersHorizontal
-                  className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <select
-                  value={selectedType}
-                  onChange={(e) =>
-                    setSelectedType(e.target.value as 'all' | TransformerType)
-                  }
-                  aria-label="กรองตามชนิดหม้อแปลง"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-2 focus:outline-amber-600 cursor-pointer"
-                >
-                  <option value="all">ชนิดหม้อแปลง: ทั้งหมด</option>
-                  <option value="Oil-Immersed">ชนิดน้ำมัน (ONAN)</option>
-                  <option value="Hermetically Sealed">ชนิดปิดผนึกสนิท (Sealed)</option>
-                  <option value="Dry-Type Cast Resin">ชนิดแห้ง Cast Resin</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-3">
+              <div className="md:col-span-4">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -178,8 +158,7 @@ export default function App() {
                 >
                   <option value="kva-desc">เรียงตามพิกัด: kVA สูง → ต่ำ</option>
                   <option value="kva-asc">เรียงตามพิกัด: kVA ต่ำ → สูง</option>
-                  <option value="price-asc">เรียงตามราคา: ต่ำ → สูง</option>
-                  <option value="price-desc">เรียงตามราคา: สูง → ต่ำ</option>
+                  <option value="pea-asc">เรียงตาม PEA No. (น้อย → มาก)</option>
                 </select>
               </div>
             </div>
@@ -209,32 +188,44 @@ export default function App() {
                 return (
                   <div key={lot.id} className="space-y-5">
                     {/* Lot Header Bar */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6">
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
+                      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                         <div className="space-y-1.5">
-                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                            <span className="font-mono font-semibold text-amber-700">
-                              {lot.code}
-                            </span>
-                            <span aria-hidden="true">·</span>
-                            <span>{lot.sourceLocation}</span>
-                            <span aria-hidden="true">·</span>
-                            <span>{lot.inspectedDate}</span>
-                          </div>
+                          <p className="text-xs text-slate-500">
+                            {lot.sourceLocation}
+                          </p>
                           <h3 className="font-display text-xl font-bold text-slate-900">
-                            {lot.name}
+                            {lot.shortLabel}
                           </h3>
                           <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
                             {lot.description}
                           </p>
                         </div>
 
-                        <div className="text-left lg:text-right shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                        <div className="text-left lg:text-right shrink-0">
                           <p className="text-xs text-slate-500 font-mono tabular-nums">
-                            รวม {lotUnits.length} รุ่น · {lotStockSum} เครื่อง
+                            รวม {lotUnits.length} รายการ · {lotStockSum} เครื่อง
                           </p>
-                          <p className="text-xs font-mono font-medium text-slate-700 mt-0.5">
-                            พิกัด {lot.kvaRange}
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                          <p className="text-slate-500 mb-0.5">วันที่เริ่ม</p>
+                          <p className="font-mono font-semibold text-slate-900 tabular-nums">
+                            {formatThaiDateTime(lot.startDate)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 mb-0.5">วันที่สุดท้าย</p>
+                          <p className="font-mono font-semibold text-slate-900 tabular-nums">
+                            {formatThaiDateTime(lot.endDate)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 mb-0.5">วันที่เปิดซอง</p>
+                          <p className="font-mono font-semibold text-amber-800 tabular-nums">
+                            {formatThaiDateTime(lot.bidOpeningAt)}
                           </p>
                         </div>
                       </div>

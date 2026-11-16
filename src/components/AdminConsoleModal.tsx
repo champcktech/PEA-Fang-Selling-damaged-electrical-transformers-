@@ -1,12 +1,13 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Database, LogIn, LogOut, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { Database, LogIn, LogOut, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import { useFirebase } from '../contexts/FirebaseContext';
 import {
-  TransformerCondition,
+  HERO_IMAGE,
+  PEA_NO_REGEX,
+  PHOTO_SLOT_LABELS,
   TransformerLot,
-  TransformerType,
   TransformerUnit,
-  formatThb,
+  formatThaiDateTime,
 } from '../data/transformers';
 import {
   clearAllCatalogInFirestore,
@@ -16,6 +17,7 @@ import {
   saveTransformerToFirestore,
   seedInitialCatalogToFirestore,
 } from '../lib/firebase';
+import { ResilientImage } from './ResilientImage';
 
 interface AdminConsoleModalProps {
   isOpen: boolean;
@@ -26,24 +28,77 @@ type AdminTab = 'lots' | 'transformers';
 
 const IMAGE_PRESETS = [
   {
-    label: 'หม้อแปลงระบบจำหน่าย 22kV (50–250 kVA)',
-    url: '/src/assets/images/lot_pole_mounted_1794794274166.jpg',
+    label: 'ตัวอย่าง: หม้อแปลงระบบจำหน่าย 22kV',
+    url: '/images/lot_pole_mounted_1794794274166.jpg',
   },
   {
-    label: 'หม้อแปลงน้ำมันขนาดใหญ่ (500–1,000 kVA)',
-    url: '/src/assets/images/lot_oil_high_kva_1794794273929.jpg',
+    label: 'ตัวอย่าง: หม้อแปลงน้ำมันขนาดใหญ่',
+    url: '/images/lot_oil_high_kva_1794794273929.jpg',
   },
   {
-    label: 'หม้อแปลงแบบปิดผนึกสนิท (Sealed Type)',
-    url: '/src/assets/images/lot_pad_mounted_1794794275090.jpg',
+    label: 'ตัวอย่าง: หม้อแปลงแบบปิดผนึกสนิท',
+    url: '/images/lot_pad_mounted_1794794275090.jpg',
   },
   {
-    label: 'หม้อแปลงชนิดแห้ง Cast Resin',
-    url: '/src/assets/images/lot_dry_cast_resin_1794794275077.jpg',
+    label: 'ตัวอย่าง: หม้อแปลงชนิดแห้ง Cast Resin',
+    url: '/images/lot_dry_cast_resin_1794794275077.jpg',
+  },
+  {
+    label: 'ตัวอย่าง: ลานพัสดุ / ป้ายรหัส PEA',
+    url: HERO_IMAGE,
+  },
+  {
+    label: 'ตัวอย่าง: เนมเพลท / บุชชิ่ง',
+    url: '/images/detail_nameplate_bushing_1794794276341.jpg',
   },
 ];
 
-const DETAIL_IMAGE = '/src/assets/images/detail_nameplate_bushing_1794794276341.jpg';
+const DEFAULT_PHOTO_TUPLE: [string, string, string] = [
+  IMAGE_PRESETS[0].url,
+  IMAGE_PRESETS[4].url,
+  IMAGE_PRESETS[5].url,
+];
+
+async function compressImageFileToDataUrl(file: File): Promise<string> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพได้'));
+      image.src = objectUrl;
+    });
+
+    const attempts: Array<{ maxWidth: number; quality: number }> = [
+      { maxWidth: 800, quality: 0.72 },
+      { maxWidth: 680, quality: 0.6 },
+      { maxWidth: 520, quality: 0.5 },
+      { maxWidth: 420, quality: 0.42 },
+    ];
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('เบราว์เซอร์ไม่รองรับการประมวลผลรูปภาพ');
+    }
+
+    for (const attempt of attempts) {
+      const scale = Math.min(1, attempt.maxWidth / Math.max(1, img.width));
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', attempt.quality);
+      if (dataUrl.length <= 270000) {
+        return dataUrl;
+      }
+    }
+
+    throw new Error('ขนาดรูปภาพใหญ่เกินขีดจำกัด กรุณาเลือกรูปที่เล็กลง');
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
   const {
@@ -62,38 +117,23 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   // Lot Form State
   const [editingLotId, setEditingLotId] = useState<string | null>(null);
-  const [lotCode, setLotCode] = useState('');
-  const [lotName, setLotName] = useState('');
   const [lotShortLabel, setLotShortLabel] = useState('');
   const [lotLocation, setLotLocation] = useState('ลานพัสดุ กฟส.ฝาง อ.ฝาง จ.เชียงใหม่');
-  const [lotInspectedDate, setLotInspectedDate] = useState('สำรวจสภาพ พ.ย. 2026');
-  const [lotKvaRange, setLotKvaRange] = useState('');
+  const [lotStartDate, setLotStartDate] = useState('2026-11-16T08:30');
+  const [lotEndDate, setLotEndDate] = useState('2026-11-24T16:30');
+  const [lotBidOpeningAt, setLotBidOpeningAt] = useState('2026-11-25T10:00');
   const [lotDescription, setLotDescription] = useState('');
 
   // Transformer Form State
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const [unitLotId, setUnitLotId] = useState('');
-  const [unitSku, setUnitSku] = useState('');
-  const [unitPeaAssetNo, setUnitPeaAssetNo] = useState('');
-  const [unitTitle, setUnitTitle] = useState('');
-  const [unitBrand, setUnitBrand] = useState('');
-  const [unitType, setUnitType] = useState<TransformerType>('Oil-Immersed');
-  const [unitCondition, setUnitCondition] = useState<TransformerCondition>(
-    'เก่า ชำรุด (ขายตามสภาพ)'
-  );
-  const [unitDamageDetail, setUnitDamageDetail] = useState('');
+  const [unitPeaNo, setUnitPeaNo] = useState('');
   const [unitKva, setUnitKva] = useState('160');
-  const [unitPrimaryV, setUnitPrimaryV] = useState('22,000 V');
-  const [unitSecondaryV, setUnitSecondaryV] = useState('400 / 230 V');
-  const [unitVectorGroup, setUnitVectorGroup] = useState('Dyn11');
-  const [unitCooling, setUnitCooling] = useState('ONAN');
-  const [unitYear, setUnitYear] = useState('2014');
-  const [unitWeightKg, setUnitWeightKg] = useState('820');
-  const [unitDimensions, setUnitDimensions] = useState('1,150 × 820 × 1,340 มม.');
   const [unitStockQty, setUnitStockQty] = useState('1');
-  const [unitPriceThb, setUnitPriceThb] = useState('32000');
   const [unitSummary, setUnitSummary] = useState('');
-  const [unitImageUrl, setUnitImageUrl] = useState(IMAGE_PRESETS[0].url);
+  const [unitImages, setUnitImages] = useState<[string, string, string]>([
+    ...DEFAULT_PHOTO_TUPLE,
+  ]);
 
   useEffect(() => {
     if (!unitLotId && lots.length > 0) {
@@ -114,72 +154,77 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   const resetLotForm = () => {
     setEditingLotId(null);
-    setLotCode('');
-    setLotName('');
     setLotShortLabel('');
     setLotLocation('ลานพัสดุ กฟส.ฝาง อ.ฝาง จ.เชียงใหม่');
-    setLotInspectedDate('สำรวจสภาพ พ.ย. 2026');
-    setLotKvaRange('');
+    setLotStartDate('2026-11-16T08:30');
+    setLotEndDate('2026-11-24T16:30');
+    setLotBidOpeningAt('2026-11-25T10:00');
     setLotDescription('');
   };
 
   const startEditLot = (lot: TransformerLot) => {
     setEditingLotId(lot.id);
-    setLotCode(lot.code);
-    setLotName(lot.name);
     setLotShortLabel(lot.shortLabel);
     setLotLocation(lot.sourceLocation);
-    setLotInspectedDate(lot.inspectedDate);
-    setLotKvaRange(lot.kvaRange);
+    setLotStartDate(lot.startDate || '2026-11-16T08:30');
+    setLotEndDate(lot.endDate || '2026-11-24T16:30');
+    setLotBidOpeningAt(lot.bidOpeningAt || '2026-11-25T10:00');
     setLotDescription(lot.description);
   };
 
   const resetUnitForm = () => {
     setEditingUnitId(null);
     setUnitLotId(lots[0]?.id || '');
-    setUnitSku('');
-    setUnitPeaAssetNo('');
-    setUnitTitle('');
-    setUnitBrand('');
-    setUnitType('Oil-Immersed');
-    setUnitCondition('เก่า ชำรุด (ขายตามสภาพ)');
-    setUnitDamageDetail('');
+    setUnitPeaNo('');
     setUnitKva('160');
-    setUnitPrimaryV('22,000 V');
-    setUnitSecondaryV('400 / 230 V');
-    setUnitVectorGroup('Dyn11');
-    setUnitCooling('ONAN');
-    setUnitYear('2014');
-    setUnitWeightKg('820');
-    setUnitDimensions('1,150 × 820 × 1,340 มม.');
     setUnitStockQty('1');
-    setUnitPriceThb('32000');
     setUnitSummary('');
-    setUnitImageUrl(IMAGE_PRESETS[0].url);
+    setUnitImages([...DEFAULT_PHOTO_TUPLE]);
   };
 
   const startEditUnit = (unit: TransformerUnit) => {
     setEditingUnitId(unit.id);
     setUnitLotId(unit.lotId);
-    setUnitSku(unit.sku);
-    setUnitPeaAssetNo(unit.peaAssetNo);
-    setUnitTitle(unit.title);
-    setUnitBrand(unit.brand);
-    setUnitType(unit.type);
-    setUnitCondition(unit.condition);
-    setUnitDamageDetail(unit.damageDetail);
+    setUnitPeaNo(unit.peaNo);
     setUnitKva(String(unit.kva));
-    setUnitPrimaryV(unit.primaryVoltage);
-    setUnitSecondaryV(unit.secondaryVoltage);
-    setUnitVectorGroup(unit.vectorGroup);
-    setUnitCooling(unit.cooling);
-    setUnitYear(String(unit.year));
-    setUnitWeightKg(String(unit.weightKg));
-    setUnitDimensions(unit.dimensionsMm);
     setUnitStockQty(String(unit.stockQty));
-    setUnitPriceThb(String(unit.priceThb));
     setUnitSummary(unit.summaryNote);
-    setUnitImageUrl(unit.images[0]?.url || IMAGE_PRESETS[0].url);
+    setUnitImages([
+      unit.images[0]?.url || DEFAULT_PHOTO_TUPLE[0],
+      unit.images[1]?.url || DEFAULT_PHOTO_TUPLE[1],
+      unit.images[2]?.url || DEFAULT_PHOTO_TUPLE[2],
+    ]);
+  };
+
+  const handlePhotoFileChange = async (
+    slotIndex: 0 | 1 | 2,
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setErrorMsg(null);
+    setBusyMessage(`กำลังปรับขนาดรูปภาพ ${PHOTO_SLOT_LABELS[slotIndex]}...`);
+    try {
+      const dataUrl = await compressImageFileToDataUrl(file);
+      setUnitImages((prev) => {
+        const next: [string, string, string] = [prev[0], prev[1], prev[2]];
+        next[slotIndex] = dataUrl;
+        return next;
+      });
+      setBusyMessage(null);
+    } catch (err) {
+      setBusyMessage(null);
+      setErrorMsg(err instanceof Error ? err.message : 'อัปโหลดรูปภาพไม่สำเร็จ');
+    }
+  };
+
+  const handlePhotoPresetChange = (slotIndex: 0 | 1 | 2, url: string) => {
+    setUnitImages((prev) => {
+      const next: [string, string, string] = [prev[0], prev[1], prev[2]];
+      next[slotIndex] = url;
+      return next;
+    });
   };
 
   const handleSeedDatabase = async () => {
@@ -217,7 +262,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   const handleDeleteLot = async (lot: TransformerLot) => {
     setErrorMsg(null);
-    setBusyMessage(`กำลังลบล็อต ${lot.code} และหม้อแปลงในล็อต...`);
+    setBusyMessage(`กำลังลบ ${lot.shortLabel} และหม้อแปลงในล็อต...`);
     try {
       if (!isUsingFirestoreData) {
         await seedInitialCatalogToFirestore({ excludeLotId: lot.id });
@@ -237,7 +282,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   const handleDeleteUnit = async (unit: TransformerUnit) => {
     setErrorMsg(null);
-    setBusyMessage(`กำลังลบ ${unit.title} ออกจาก Firestore...`);
+    setBusyMessage(`กำลังลบ ${unit.peaNo} ออกจาก Firestore...`);
     try {
       if (!isUsingFirestoreData) {
         await seedInitialCatalogToFirestore({ excludeUnitId: unit.id });
@@ -263,12 +308,11 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
       await saveLotToFirestore(
         {
           id: editingLotId || undefined,
-          code: lotCode,
-          name: lotName,
-          shortLabel: lotShortLabel || lotCode,
+          shortLabel: lotShortLabel,
           sourceLocation: lotLocation,
-          inspectedDate: lotInspectedDate,
-          kvaRange: lotKvaRange,
+          startDate: lotStartDate,
+          endDate: lotEndDate,
+          bidOpeningAt: lotBidOpeningAt,
           description: lotDescription,
         },
         !editingLotId
@@ -283,9 +327,15 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
   const handleSaveUnit = async (e: FormEvent) => {
     e.preventDefault();
+    const normalizedPeaNo = unitPeaNo.trim().toUpperCase();
+    if (!PEA_NO_REGEX.test(normalizedPeaNo)) {
+      setErrorMsg('กรุณาระบุ PEA No. ในรูปแบบ TRxx-xxxxxx (เช่น TR54-025018)');
+      return;
+    }
+
     if (!isUsingFirestoreData) {
       setErrorMsg(
-        'กรุณากด "นำเข้าข้อมูลตั้งต้น กฟส.ฝาง ลง Firestore" หรือเพิ่มล็อตใน Firestore ก่อนเพิ่มหม้อแปลง'
+        'กรุณากด "นำเข้าข้อมูลตั้งต้น กฟส.ฝาง" หรือเพิ่มล็อตใน Firestore ก่อนเพิ่มหม้อแปลง'
       );
       return;
     }
@@ -294,42 +344,25 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
       setErrorMsg('ไม่พบล็อตที่เลือก กรุณาสร้างล็อตสินค้าก่อน');
       return;
     }
+
     setErrorMsg(null);
     setBusyMessage('กำลังบันทึกข้อมูลหม้อแปลงลง Firestore...');
-    const typeLabelMap: Record<TransformerType, string> = {
-      'Oil-Immersed': 'ชนิดน้ำมัน (ONAN)',
-      'Dry-Type Cast Resin': 'ชนิดแห้ง Cast Resin',
-      'Hermetically Sealed': 'ชนิดปิดผนึกสนิท (Sealed)',
-    };
     try {
       await saveTransformerToFirestore(
         {
           id: editingUnitId || undefined,
           lotId: targetLot.id,
-          lotCode: targetLot.code,
-          sku: unitSku,
-          peaAssetNo: unitPeaAssetNo,
-          title: unitTitle,
-          brand: unitBrand,
-          type: unitType,
-          typeLabelTh: typeLabelMap[unitType],
-          condition: unitCondition,
-          damageDetail: unitDamageDetail,
+          lotCode: targetLot.shortLabel.slice(0, 80),
+          peaNo: normalizedPeaNo,
           kva: Number(unitKva),
-          primaryVoltage: unitPrimaryV,
-          secondaryVoltage: unitSecondaryV,
-          vectorGroup: unitVectorGroup,
-          frequency: '50 Hz',
-          phase: '3 เฟส',
-          cooling: unitCooling,
-          year: Number(unitYear),
-          weightKg: Number(unitWeightKg),
-          dimensionsMm: unitDimensions,
           stockQty: Number(unitStockQty),
-          priceThb: Number(unitPriceThb),
           summaryNote: unitSummary,
-          imageUrls: [unitImageUrl, DETAIL_IMAGE],
-          imageCaptions: [unitTitle, 'รายละเอียดบุชชิ่งและจุดเชื่อมต่อ'],
+          imageUrls: unitImages,
+          imageCaptions: [
+            PHOTO_SLOT_LABELS[0],
+            PHOTO_SLOT_LABELS[1],
+            PHOTO_SLOT_LABELS[2],
+          ],
         },
         !editingUnitId
       );
@@ -491,86 +524,74 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                           </button>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            รหัสล็อต *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={lotCode}
-                            onChange={(e) => setLotCode(e.target.value)}
-                            placeholder="เช่น Lot F-2604"
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            ช่วงพิกัด kVA *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={lotKvaRange}
-                            onChange={(e) => setLotKvaRange(e.target.value)}
-                            placeholder="เช่น 50 – 250 kVA"
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
+
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                          ชื่อล็อตเต็ม *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={lotName}
-                          onChange={(e) => setLotName(e.target.value)}
-                          placeholder="เช่น ล็อตที่ 4 · หม้อแปลงเก่าชำรุด อ.ฝาง"
-                          className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                          ชื่อย่อบนแท็บ *
+                          ชื่อล็อต *
                         </label>
                         <input
                           type="text"
                           required
                           value={lotShortLabel}
                           onChange={(e) => setLotShortLabel(e.target.value)}
-                          placeholder="เช่น Lot F-2604 · อ.ฝาง"
+                          placeholder="เช่น ล็อตที่ 4 · หม้อแปลงจำหน่าย อ.ฝาง"
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          จุดจัดเก็บ / สถานที่ *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={lotLocation}
+                          onChange={(e) => setLotLocation(e.target.value)}
+                          className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-medium text-slate-700 mb-1">
-                            จุดจัดเก็บ *
+                            วันที่เริ่ม (วันและเวลา) *
                           </label>
                           <input
-                            type="text"
+                            type="datetime-local"
                             required
-                            value={lotLocation}
-                            onChange={(e) => setLotLocation(e.target.value)}
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                            value={lotStartDate}
+                            onChange={(e) => setLotStartDate(e.target.value)}
+                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-700 mb-1">
-                            วันที่สำรวจ *
+                            วันที่สุดท้าย (วันและเวลา) *
                           </label>
                           <input
-                            type="text"
+                            type="datetime-local"
                             required
-                            value={lotInspectedDate}
-                            onChange={(e) => setLotInspectedDate(e.target.value)}
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                            value={lotEndDate}
+                            onChange={(e) => setLotEndDate(e.target.value)}
+                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
                           />
                         </div>
                       </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          วันที่เปิดซอง (วันและเวลา) *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          required
+                          value={lotBidOpeningAt}
+                          onChange={(e) => setLotBidOpeningAt(e.target.value)}
+                          className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
+                        />
+                      </div>
+
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">
                           คำอธิบายล็อต *
@@ -580,9 +601,11 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                           rows={3}
                           value={lotDescription}
                           onChange={(e) => setLotDescription(e.target.value)}
+                          placeholder="รายละเอียดสภาพโดยรวมของหม้อแปลงในล็อต"
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         />
                       </div>
+
                       <button
                         type="submit"
                         disabled={Boolean(busyMessage)}
@@ -609,13 +632,19 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                             key={lot.id}
                             className="p-4 flex items-start justify-between gap-4"
                           >
-                            <div className="min-w-0">
-                              <p className="text-xs font-mono text-amber-700 font-semibold">
-                                {lot.code} · {lot.kvaRange}
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {lot.shortLabel}
                               </p>
-                              <p className="text-sm font-semibold text-slate-900">{lot.name}</p>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                {lot.sourceLocation} · {lot.inspectedDate}
+                              <p className="text-xs text-slate-500">
+                                {lot.sourceLocation}
+                              </p>
+                              <p className="text-xs font-mono text-slate-700 tabular-nums">
+                                เริ่ม: {formatThaiDateTime(lot.startDate)} · สุดท้าย:{' '}
+                                {formatThaiDateTime(lot.endDate)}
+                              </p>
+                              <p className="text-xs font-mono text-amber-800 font-semibold tabular-nums">
+                                เปิดซอง: {formatThaiDateTime(lot.bidOpeningAt)}
                               </p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
@@ -624,7 +653,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                 onClick={() => startEditLot(lot)}
                                 disabled={Boolean(busyMessage)}
                                 className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg cursor-pointer disabled:opacity-50"
-                                aria-label={`แก้ไข ${lot.code}`}
+                                aria-label={`แก้ไข ${lot.shortLabel}`}
                               >
                                 <Pencil className="w-4 h-4" aria-hidden="true" />
                               </button>
@@ -633,7 +662,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                 onClick={() => handleDeleteLot(lot)}
                                 disabled={Boolean(busyMessage)}
                                 className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg cursor-pointer disabled:opacity-50"
-                                aria-label={`ลบ ${lot.code}`}
+                                aria-label={`ลบ ${lot.shortLabel}`}
                               >
                                 <Trash2 className="w-4 h-4" aria-hidden="true" />
                               </button>
@@ -651,7 +680,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                   <div className="lg:col-span-5">
                     <form
                       onSubmit={handleSaveUnit}
-                      className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3"
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3.5"
                     >
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-bold text-slate-900">
@@ -668,132 +697,41 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            สังกัดล็อต *
-                          </label>
-                          <select
-                            value={unitLotId}
-                            onChange={(e) => setUnitLotId(e.target.value)}
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                          >
-                            {lots.map((l) => (
-                              <option key={l.id} value={l.id}>
-                                {l.code}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            รหัสทรัพย์สิน กฟภ. *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={unitPeaAssetNo}
-                            onChange={(e) => setUnitPeaAssetNo(e.target.value)}
-                            placeholder="PEA-54-0160-012"
-                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            รหัสรายการ (SKU) *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={unitSku}
-                            onChange={(e) => setUnitSku(e.target.value)}
-                            placeholder="FG-2601-04"
-                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            ยี่ห้อ *
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={unitBrand}
-                            onChange={(e) => setUnitBrand(e.target.value)}
-                            placeholder="Ekarat / Tirathai"
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          สังกัดล็อต *
+                        </label>
+                        <select
+                          value={unitLotId}
+                          onChange={(e) => setUnitLotId(e.target.value)}
+                          className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                        >
+                          {lots.map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.shortLabel}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                          ชื่อรายการหม้อแปลง *
+                          PEA No. (รูปแบบ TRxx-xxxxxx) *
                         </label>
                         <input
                           type="text"
                           required
-                          value={unitTitle}
-                          onChange={(e) => setUnitTitle(e.target.value)}
-                          placeholder="หม้อแปลงเก่า 160 kVA — Ekarat ชำรุด"
-                          className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                          maxLength={11}
+                          pattern="^TR[0-9]{2}-[0-9]{6}$"
+                          title="ระบุในรูปแบบ TRxx-xxxxxx เช่น TR54-025018"
+                          value={unitPeaNo}
+                          onChange={(e) => setUnitPeaNo(e.target.value.toUpperCase())}
+                          placeholder="TR54-025018"
+                          className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            ระดับสภาพ *
-                          </label>
-                          <select
-                            value={unitCondition}
-                            onChange={(e) =>
-                              setUnitCondition(e.target.value as TransformerCondition)
-                            }
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                          >
-                            <option value="เก่า ชำรุด (ขายตามสภาพ)">
-                              เก่า ชำรุด (ขายตามสภาพ)
-                            </option>
-                            <option value="ชำรุดหนัก / ขายซากอะไหล่">
-                              ชำรุดหนัก / ขายซากอะไหล่
-                            </option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            ชนิดหม้อแปลง *
-                          </label>
-                          <select
-                            value={unitType}
-                            onChange={(e) => setUnitType(e.target.value as TransformerType)}
-                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                          >
-                            <option value="Oil-Immersed">ชนิดน้ำมัน (ONAN)</option>
-                            <option value="Hermetically Sealed">ชนิดปิดผนึกสนิท</option>
-                            <option value="Dry-Type Cast Resin">ชนิดแห้ง Cast Resin</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                          อาการชำรุดที่พบ *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={unitDamageDetail}
-                          onChange={(e) => setUnitDamageDetail(e.target.value)}
-                          placeholder="เช่น ขดลวดไหม้ 1 เฟส · ตัวถังซึมน้ำมัน"
-                          className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3">
                         <div>
                           <label className="block text-xs font-medium text-slate-700 mb-1">
                             พิกัด (kVA) *
@@ -820,63 +758,70 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                             className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            ราคาตั้งขาย (บาท) *
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            min={0}
-                            value={unitPriceThb}
-                            onChange={(e) => setUnitPriceThb(e.target.value)}
-                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            ปีผลิต *
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            value={unitYear}
-                            onChange={(e) => setUnitYear(e.target.value)}
-                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-700 mb-1">
-                            น้ำหนัก (กก.) *
-                          </label>
-                          <input
-                            type="number"
-                            required
-                            value={unitWeightKg}
-                            onChange={(e) => setUnitWeightKg(e.target.value)}
-                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
+                      <div className="space-y-2.5 pt-1">
+                        <p className="text-xs font-semibold text-slate-800">
+                          แนบรูปภาพประกอบ 3 รูป *
+                        </p>
+                        {([0, 1, 2] as const).map((slotIdx) => {
+                          const currentUrl = unitImages[slotIdx];
+                          const isCustomUpload = currentUrl.startsWith('data:image/');
+                          return (
+                            <div
+                              key={PHOTO_SLOT_LABELS[slotIdx]}
+                              className="p-3 bg-white border border-slate-200 rounded-lg space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-semibold text-slate-800">
+                                  {PHOTO_SLOT_LABELS[slotIdx]}
+                                </span>
+                                <label className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-800 bg-slate-100 hover:bg-slate-200 rounded cursor-pointer">
+                                  <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+                                  <span>อัปโหลดรูป</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="sr-only"
+                                    onChange={(e) => handlePhotoFileChange(slotIdx, e)}
+                                  />
+                                </label>
+                              </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                          รูปภาพประกอบ
-                        </label>
-                        <select
-                          value={unitImageUrl}
-                          onChange={(e) => setUnitImageUrl(e.target.value)}
-                          className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
-                        >
-                          {IMAGE_PRESETS.map((p) => (
-                            <option key={p.url} value={p.url}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </select>
+                              <div className="flex items-center gap-3">
+                                <div className="w-20 h-14 rounded overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
+                                  <ResilientImage
+                                    src={currentUrl}
+                                    alt={PHOTO_SLOT_LABELS[slotIdx]}
+                                    fallbackTitle={PHOTO_SLOT_LABELS[slotIdx]}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <select
+                                  value={isCustomUpload ? '__uploaded__' : currentUrl}
+                                  onChange={(e) => {
+                                    if (e.target.value !== '__uploaded__') {
+                                      handlePhotoPresetChange(slotIdx, e.target.value);
+                                    }
+                                  }}
+                                  aria-label={`เลือกรูป ${PHOTO_SLOT_LABELS[slotIdx]}`}
+                                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg"
+                                >
+                                  {isCustomUpload && (
+                                    <option value="__uploaded__">
+                                      รูปที่อัปโหลดจากเครื่องแล้ว
+                                    </option>
+                                  )}
+                                  {IMAGE_PRESETS.map((p) => (
+                                    <option key={p.url} value={p.url}>
+                                      {p.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div>
@@ -885,9 +830,10 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                         </label>
                         <textarea
                           required
-                          rows={2}
+                          rows={3}
                           value={unitSummary}
                           onChange={(e) => setUnitSummary(e.target.value)}
+                          placeholder="สภาพตัวถัง ครีบระบายความร้อน หรือหมายเหตุเพิ่มเติม"
                           className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
                         />
                       </div>
@@ -907,7 +853,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
 
                   <div className="lg:col-span-7 space-y-3">
                     <h3 className="text-sm font-bold text-slate-900">
-                      รายการหม้อแปลงทั้งหมด ({units.length} รุ่น)
+                      รายการหม้อแปลงทั้งหมด ({units.length} รายการ)
                     </h3>
                     {units.length === 0 ? (
                       <div className="p-8 text-center border border-slate-200 rounded-xl text-sm text-slate-500">
@@ -920,17 +866,30 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                             key={unit.id}
                             className="p-4 flex items-center justify-between gap-4"
                           >
-                            <div className="min-w-0">
-                              <p className="text-xs font-mono text-slate-500">
-                                {unit.lotCode} · {unit.peaAssetNo} · จำนวน {unit.stockQty} เครื่อง
-                              </p>
-                              <p className="text-sm font-semibold text-slate-900 truncate">
-                                {unit.title}
-                              </p>
-                              <p className="text-xs text-amber-800 truncate">{unit.damageDetail}</p>
-                              <p className="text-xs font-mono font-semibold text-slate-800 tabular-nums mt-0.5">
-                                {formatThb(unit.priceThb)}
-                              </p>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
+                                <ResilientImage
+                                  src={unit.images[0]?.url || ''}
+                                  alt={unit.peaNo}
+                                  fallbackTitle={unit.peaNo}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-mono text-slate-600 truncate">
+                                  {unit.lotCode} ·{' '}
+                                  <span className="font-semibold text-slate-900">
+                                    {unit.peaNo}
+                                  </span>{' '}
+                                  · จำนวน {unit.stockQty} เครื่อง
+                                </p>
+                                <p className="text-sm font-semibold text-slate-900 truncate">
+                                  หม้อแปลงขนาด {unit.kva.toLocaleString('th-TH')} kVA
+                                </p>
+                                <p className="text-xs text-slate-500 truncate">
+                                  {unit.summaryNote}
+                                </p>
+                              </div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
@@ -938,7 +897,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                 onClick={() => startEditUnit(unit)}
                                 disabled={Boolean(busyMessage)}
                                 className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg cursor-pointer disabled:opacity-50"
-                                aria-label={`แก้ไข ${unit.sku}`}
+                                aria-label={`แก้ไข ${unit.peaNo}`}
                               >
                                 <Pencil className="w-4 h-4" aria-hidden="true" />
                               </button>
@@ -947,7 +906,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                 onClick={() => handleDeleteUnit(unit)}
                                 disabled={Boolean(busyMessage)}
                                 className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg cursor-pointer disabled:opacity-50"
-                                aria-label={`ลบ ${unit.sku}`}
+                                aria-label={`ลบ ${unit.peaNo}`}
                               >
                                 <Trash2 className="w-4 h-4" aria-hidden="true" />
                               </button>
