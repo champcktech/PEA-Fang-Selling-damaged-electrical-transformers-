@@ -6,6 +6,7 @@ import {
   KVA_PRESET_OPTIONS,
   PEA_NO_REGEX,
   PHOTO_SLOT_LABELS,
+  TRANSFORMER_WATERMARK_TEXT,
   TransformerLot,
   TransformerPhase,
   TransformerUnit,
@@ -922,6 +923,8 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                     src={currentUrl}
                                     alt={PHOTO_SLOT_LABELS[slotIdx]}
                                     fallbackTitle={PHOTO_SLOT_LABELS[slotIdx]}
+                                    watermarkText={TRANSFORMER_WATERMARK_TEXT}
+                                    compactWatermark
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
@@ -1000,6 +1003,8 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                   src={unit.images[0]?.url || ''}
                                   alt={unit.peaNo}
                                   fallbackTitle={unit.peaNo}
+                                  watermarkText={TRANSFORMER_WATERMARK_TEXT}
+                                  compactWatermark
                                   className="w-full h-full object-cover"
                                 />
                               </div>

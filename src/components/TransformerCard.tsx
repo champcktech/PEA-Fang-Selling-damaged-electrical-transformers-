@@ -1,5 +1,5 @@
 import { Eye } from 'lucide-react';
-import { TransformerUnit } from '../data/transformers';
+import { TRANSFORMER_WATERMARK_TEXT, TransformerUnit } from '../data/transformers';
 import { ResilientImage } from './ResilientImage';
 
 interface TransformerCardProps {
@@ -22,6 +22,7 @@ export function TransformerCard({ unit, onInspect }: TransformerCardProps) {
           src={unit.images[0]?.url || ''}
           alt={`${cardTitle} (${unit.peaNo})`}
           fallbackTitle={`PEA No. ${unit.peaNo}`}
+          watermarkText={TRANSFORMER_WATERMARK_TEXT}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
         />
         <div className="absolute top-3 left-3 bg-slate-900/85 backdrop-blur-xs text-white px-2.5 py-1 rounded text-xs font-mono font-medium tabular-nums">

@@ -4,6 +4,8 @@ export const PHOTO_SLOT_LABELS = [
   '3. เนมเพลท',
 ] as const;
 
+export const TRANSFORMER_WATERMARK_TEXT = 'เป็นหม้อแปลงชำรุด ขาย กฟส.ฝาง';
+
 export const KVA_PRESET_OPTIONS = [
   10, 20, 30, 50, 100, 160, 250, 315, 400, 500,
 ] as const;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, Check, Clock, Copy, Gavel, X } from 'lucide-react';
 import {
   PHOTO_SLOT_LABELS,
+  TRANSFORMER_WATERMARK_TEXT,
   TransformerLot,
   TransformerUnit,
   formatThaiDateTime,
@@ -105,6 +106,7 @@ export function TransformerDetailModal({
                   src={activeImage?.url || ''}
                   alt={activeImage?.caption || headingTitle}
                   fallbackTitle={`PEA No. ${unit.peaNo}`}
+                  watermarkText={TRANSFORMER_WATERMARK_TEXT}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -130,6 +132,8 @@ export function TransformerDetailModal({
                         src={img.url}
                         alt={img.caption || PHOTO_SLOT_LABELS[index] || `มุมภาพ ${index + 1}`}
                         fallbackTitle={PHOTO_SLOT_LABELS[index] || `มุมภาพ ${index + 1}`}
+                        watermarkText={TRANSFORMER_WATERMARK_TEXT}
+                        compactWatermark
                         className="w-full h-full object-cover"
                       />
                     </div>
