@@ -1,0 +1,195 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Helpers
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 2 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'champ5698@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidLot(data, lotId) {
+      return data.keys().hasAll([
+          'id', 'code', 'name', 'shortLabel', 'sourceLocation',
+          'inspectedDate', 'kvaRange', 'description', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'code', 'name', 'shortLabel', 'sourceLocation',
+          'inspectedDate', 'kvaRange', 'description', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == lotId && isValidId(data.id)
+        && data.code is string && data.code.size() >= 2 && data.code.size() <= 40
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 160
+        && data.shortLabel is string && data.shortLabel.size() >= 2 && data.shortLabel.size() <= 80
+        && data.sourceLocation is string && data.sourceLocation.size() >= 2 && data.sourceLocation.size() <= 160
+        && data.inspectedDate is string && data.inspectedDate.size() >= 2 && data.inspectedDate.size() <= 60
+        && data.kvaRange is string && data.kvaRange.size() >= 2 && data.kvaRange.size() <= 60
+        && data.description is string && data.description.size() >= 2 && data.description.size() <= 1000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTransformerUnit(data, transformerId) {
+      return data.keys().hasAll([
+          'id', 'lotId', 'lotCode', 'sku', 'peaAssetNo', 'title', 'brand', 'type', 'typeLabelTh',
+          'condition', 'damageDetail', 'kva', 'primaryVoltage', 'secondaryVoltage', 'vectorGroup',
+          'frequency', 'phase', 'cooling', 'year', 'weightKg', 'dimensionsMm',
+          'stockQty', 'priceThb', 'summaryNote', 'imageUrls', 'imageCaptions', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'lotId', 'lotCode', 'sku', 'peaAssetNo', 'title', 'brand', 'type', 'typeLabelTh',
+          'condition', 'damageDetail', 'kva', 'primaryVoltage', 'secondaryVoltage', 'vectorGroup',
+          'frequency', 'phase', 'cooling', 'year', 'weightKg', 'dimensionsMm',
+          'stockQty', 'priceThb', 'summaryNote', 'imageUrls', 'imageCaptions', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == transformerId && isValidId(data.id)
+        && data.lotId is string && isValidId(data.lotId)
+        && data.lotCode is string && data.lotCode.size() >= 2 && data.lotCode.size() <= 40
+        && data.sku is string && data.sku.size() >= 2 && data.sku.size() <= 40
+        && data.peaAssetNo is string && data.peaAssetNo.size() >= 2 && data.peaAssetNo.size() <= 60
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 180
+        && data.brand is string && data.brand.size() >= 1 && data.brand.size() <= 80
+        && data.type in ['Oil-Immersed', 'Dry-Type Cast Resin', 'Hermetically Sealed']
+        && data.typeLabelTh is string && data.typeLabelTh.size() >= 2 && data.typeLabelTh.size() <= 80
+        && data.condition in ['เก่า ชำรุด (ขายตามสภาพ)', 'ชำรุดหนัก / ขายซากอะไหล่']
+        && data.damageDetail is string && data.damageDetail.size() >= 2 && data.damageDetail.size() <= 240
+        && data.kva is number && data.kva >= 1 && data.kva <= 100000
+        && data.primaryVoltage is string && data.primaryVoltage.size() >= 2 && data.primaryVoltage.size() <= 40
+        && data.secondaryVoltage is string && data.secondaryVoltage.size() >= 2 && data.secondaryVoltage.size() <= 40
+        && data.vectorGroup is string && data.vectorGroup.size() >= 2 && data.vectorGroup.size() <= 30
+        && data.frequency is string && data.frequency.size() >= 2 && data.frequency.size() <= 20
+        && data.phase is string && data.phase.size() >= 2 && data.phase.size() <= 30
+        && data.cooling is string && data.cooling.size() >= 2 && data.cooling.size() <= 80
+        && data.year is number && data.year >= 1970 && data.year <= 2100
+        && data.weightKg is number && data.weightKg >= 10 && data.weightKg <= 100000
+        && data.dimensionsMm is string && data.dimensionsMm.size() >= 2 && data.dimensionsMm.size() <= 80
+        && data.stockQty is number && data.stockQty >= 0 && data.stockQty <= 1000
+        && data.priceThb is number && data.priceThb >= 0 && data.priceThb <= 100000000
+        && data.summaryNote is string && data.summaryNote.size() >= 2 && data.summaryNote.size() <= 1000
+        && data.imageUrls is list && data.imageUrls.size() >= 1 && data.imageUrls.size() <= 6
+        && data.imageUrls[0] is string && data.imageUrls[0].size() <= 500
+        && data.imageCaptions is list && data.imageCaptions.size() >= 1 && data.imageCaptions.size() <= 6
+        && data.imageCaptions[0] is string && data.imageCaptions[0].size() <= 200
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'createdAt'])
+        && data.keys().hasOnly(['email', 'createdAt'])
+        && data.email is string && data.email.size() >= 5 && data.email.size() <= 160
+        && data.createdAt is timestamp;
+    }
+
+    function isValidCatalogMeta(data) {
+      return data.keys().hasAll(['initialized', 'updatedAt'])
+        && data.keys().hasOnly(['initialized', 'updatedAt'])
+        && data.initialized is bool
+        && data.updatedAt is timestamp;
+    }
+
+    // Public Read-Only Catalog: Lots (Admin Write Only)
+    match /lots/{lotId} {
+      allow get: if isValidId(lotId);
+      allow list: if true;
+      allow create: if isAdmin()
+        && isValidId(lotId)
+        && isValidLot(incoming(), lotId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(lotId)
+        && isValidLot(incoming(), lotId)
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'code', 'name', 'shortLabel', 'sourceLocation',
+          'inspectedDate', 'kvaRange', 'description', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(lotId);
+    }
+
+    // Public Read-Only Catalog: Used/Damaged Transformers (Admin Write Only)
+    match /transformers/{transformerId} {
+      allow get: if isValidId(transformerId);
+      allow list: if true;
+      allow create: if isAdmin()
+        && isValidId(transformerId)
+        && isValidTransformerUnit(incoming(), transformerId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && existsAfter(/databases/$(database)/documents/lots/$(incoming().lotId));
+      allow update: if isAdmin()
+        && isValidId(transformerId)
+        && isValidTransformerUnit(incoming(), transformerId)
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/lots/$(incoming().lotId))
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'lotId', 'lotCode', 'sku', 'peaAssetNo', 'title', 'brand', 'type', 'typeLabelTh',
+          'condition', 'damageDetail', 'kva', 'primaryVoltage', 'secondaryVoltage', 'vectorGroup',
+          'frequency', 'phase', 'cooling', 'year', 'weightKg', 'dimensionsMm',
+          'stockQty', 'priceThb', 'summaryNote', 'imageUrls', 'imageCaptions', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(transformerId);
+    }
+
+    // Catalog Initialization Flag
+    match /catalogMeta/{metaId} {
+      allow get: if isValidId(metaId);
+      allow list: if true;
+      allow create: if isAdmin()
+        && isValidId(metaId)
+        && isValidCatalogMeta(incoming())
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(metaId)
+        && isValidCatalogMeta(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['initialized', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(metaId);
+    }
+
+    // Admin Registry
+    match /admins/{adminUid} {
+      allow get: if isValidId(adminUid) && isVerifiedUser() && (request.auth.uid == adminUid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && isValidId(adminUid)
+        && isValidAdminUser(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(adminUid)
+        && isValidAdminUser(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email']);
+      allow delete: if isAdmin() && isValidId(adminUid);
+    }
+  }
+}

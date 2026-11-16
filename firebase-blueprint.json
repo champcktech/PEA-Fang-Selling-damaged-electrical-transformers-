@@ -1,0 +1,286 @@
+{
+  "entities": {
+    "TransformerLot": {
+      "title": "TransformerLot",
+      "description": "A lot/batch of used or damaged transformers listed for sale at PEA Fang (กฟส.ฝาง).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 2,
+          "maxLength": 64
+        },
+        "code": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "shortLabel": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "sourceLocation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "inspectedDate": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "kvaRange": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "name",
+        "shortLabel",
+        "sourceLocation",
+        "inspectedDate",
+        "kvaRange",
+        "description",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TransformerUnit": {
+      "title": "TransformerUnit",
+      "description": "An individual used/damaged electrical transformer unit inside a lot.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 2,
+          "maxLength": 64
+        },
+        "lotId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 2,
+          "maxLength": 64
+        },
+        "lotCode": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "sku": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "peaAssetNo": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 180
+        },
+        "brand": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Oil-Immersed", "Dry-Type Cast Resin", "Hermetically Sealed"]
+        },
+        "typeLabelTh": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "condition": {
+          "type": "string",
+          "enum": [
+            "เก่า ชำรุด (ขายตามสภาพ)",
+            "ชำรุดหนัก / ขายซากอะไหล่"
+          ]
+        },
+        "damageDetail": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 240
+        },
+        "kva": {
+          "type": "number"
+        },
+        "primaryVoltage": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "secondaryVoltage": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40
+        },
+        "vectorGroup": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "frequency": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "phase": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "cooling": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "year": {
+          "type": "number"
+        },
+        "weightKg": {
+          "type": "number"
+        },
+        "dimensionsMm": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "stockQty": {
+          "type": "number"
+        },
+        "priceThb": {
+          "type": "number"
+        },
+        "summaryNote": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1000
+        },
+        "imageUrls": {
+          "type": "array"
+        },
+        "imageCaptions": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "lotId",
+        "lotCode",
+        "sku",
+        "peaAssetNo",
+        "title",
+        "brand",
+        "type",
+        "typeLabelTh",
+        "condition",
+        "damageDetail",
+        "kva",
+        "primaryVoltage",
+        "secondaryVoltage",
+        "vectorGroup",
+        "frequency",
+        "phase",
+        "cooling",
+        "year",
+        "weightKg",
+        "dimensionsMm",
+        "stockQty",
+        "priceThb",
+        "summaryNote",
+        "imageUrls",
+        "imageCaptions",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Marker document granting catalog management privileges to an admin UID.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 160
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "CatalogMeta": {
+      "title": "CatalogMeta",
+      "description": "Tracks whether the live Firestore catalog has been initialized.",
+      "type": "object",
+      "properties": {
+        "initialized": {
+          "type": "boolean"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["initialized", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/lots/{lotId}": {
+      "schema": { "$ref": "#/entities/TransformerLot" },
+      "description": "Publicly readable used/damaged transformer lots at PEA Fang, writable only by verified admins."
+    },
+    "/transformers/{transformerId}": {
+      "schema": { "$ref": "#/entities/TransformerUnit" },
+      "description": "Publicly readable used/damaged transformer units, writable only by verified admins."
+    },
+    "/catalogMeta/{metaId}": {
+      "schema": { "$ref": "#/entities/CatalogMeta" },
+      "description": "Publicly readable catalog initialization flag, writable only by verified admins."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin authorization registry."
+    }
+  }
+}
