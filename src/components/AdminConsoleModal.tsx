@@ -3,9 +3,11 @@ import { Database, LogIn, LogOut, Pencil, Plus, Trash2, Upload, X } from 'lucide
 import { useFirebase } from '../contexts/FirebaseContext';
 import {
   HERO_IMAGE,
+  KVA_PRESET_OPTIONS,
   PEA_NO_REGEX,
   PHOTO_SLOT_LABELS,
   TransformerLot,
+  TransformerPhase,
   TransformerUnit,
   formatThaiDateTime,
 } from '../data/transformers';
@@ -132,6 +134,8 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
   const [unitLotId, setUnitLotId] = useState('');
   const [unitPeaNo, setUnitPeaNo] = useState('');
   const [unitKva, setUnitKva] = useState('160');
+  const [isCustomKva, setIsCustomKva] = useState(false);
+  const [unitPhase, setUnitPhase] = useState<TransformerPhase>('3 เฟส');
   const [unitStockQty, setUnitStockQty] = useState('1');
   const [unitSummary, setUnitSummary] = useState('');
   const [unitImages, setUnitImages] = useState<[string, string, string]>([
@@ -184,16 +188,21 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
     setUnitLotId(lots[0]?.id || '');
     setUnitPeaNo('');
     setUnitKva('160');
+    setIsCustomKva(false);
+    setUnitPhase('3 เฟส');
     setUnitStockQty('1');
     setUnitSummary('');
     setUnitImages([...DEFAULT_PHOTO_TUPLE]);
   };
 
   const startEditUnit = (unit: TransformerUnit) => {
+    const isPreset = KVA_PRESET_OPTIONS.some((preset) => preset === unit.kva);
     setEditingUnitId(unit.id);
     setUnitLotId(unit.lotId);
     setUnitPeaNo(unit.peaNo);
     setUnitKva(String(unit.kva));
+    setIsCustomKva(!isPreset);
+    setUnitPhase(unit.phase);
     setUnitStockQty(String(unit.stockQty));
     setUnitSummary(unit.summaryNote);
     setUnitImages([
@@ -355,13 +364,20 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
     setErrorMsg(null);
     setBusyMessage('กำลังบันทึกข้อมูลหม้อแปลงลง Firestore...');
     try {
+      const parsedKva = Number(unitKva);
+      if (!Number.isFinite(parsedKva) || parsedKva < 1 || parsedKva > 100000) {
+        setBusyMessage(null);
+        setErrorMsg('กรุณาระบุพิกัด (kVA) ตั้งแต่ 1 ถึง 100,000');
+        return;
+      }
       await saveTransformerToFirestore(
         {
           id: editingUnitId || undefined,
           lotId: targetLot.id,
           lotCode: targetLot.shortLabel.slice(0, 80),
           peaNo: normalizedPeaNo,
-          kva: Number(unitKva),
+          kva: parsedKva,
+          phase: unitPhase,
           stockQty: Number(unitStockQty),
           summaryNote: unitSummary,
           imageUrls: unitImages,
@@ -795,33 +811,81 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-medium text-slate-700 mb-1">
                             พิกัด (kVA) *
                           </label>
-                          <input
-                            type="number"
-                            required
-                            min={1}
-                            value={unitKva}
-                            onChange={(e) => setUnitKva(e.target.value)}
+                          <select
+                            value={
+                              isCustomKva ||
+                              !KVA_PRESET_OPTIONS.some((v) => String(v) === unitKva)
+                                ? 'custom'
+                                : unitKva
+                            }
+                            onChange={(e) => {
+                              if (e.target.value === 'custom') {
+                                setIsCustomKva(true);
+                              } else {
+                                setIsCustomKva(false);
+                                setUnitKva(e.target.value);
+                              }
+                            }}
+                            aria-label="เลือกพิกัด (kVA)"
                             className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
+                          >
+                            {KVA_PRESET_OPTIONS.map((kvaOption) => (
+                              <option key={kvaOption} value={String(kvaOption)}>
+                                {kvaOption} kVA
+                              </option>
+                            ))}
+                            <option value="custom">ระบุค่าเอง...</option>
+                          </select>
+                          {(isCustomKva ||
+                            !KVA_PRESET_OPTIONS.some((v) => String(v) === unitKva)) && (
+                            <input
+                              type="number"
+                              required
+                              min={1}
+                              max={100000}
+                              value={unitKva}
+                              onChange={(e) => setUnitKva(e.target.value)}
+                              placeholder="ระบุขนาด kVA เช่น 800"
+                              aria-label="ระบุพิกัด kVA เอง"
+                              className="mt-2 w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
+                            />
+                          )}
                         </div>
+
                         <div>
                           <label className="block text-xs font-medium text-slate-700 mb-1">
-                            จำนวน (เครื่อง) *
+                            เฟส *
                           </label>
-                          <input
-                            type="number"
-                            required
-                            min={0}
-                            value={unitStockQty}
-                            onChange={(e) => setUnitStockQty(e.target.value)}
-                            className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
-                          />
+                          <select
+                            value={unitPhase}
+                            onChange={(e) =>
+                              setUnitPhase(e.target.value as TransformerPhase)
+                            }
+                            className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg"
+                          >
+                            <option value="1 เฟส">1 เฟส</option>
+                            <option value="3 เฟส">3 เฟส</option>
+                          </select>
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          จำนวน (เครื่อง) *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min={0}
+                          value={unitStockQty}
+                          onChange={(e) => setUnitStockQty(e.target.value)}
+                          className="w-full px-3 py-2 text-sm font-mono bg-white border border-slate-300 rounded-lg"
+                        />
                       </div>
 
                       <div className="space-y-2.5 pt-1">
@@ -948,7 +1012,7 @@ export function AdminConsoleModal({ isOpen, onClose }: AdminConsoleModalProps) {
                                   · จำนวน {unit.stockQty} เครื่อง
                                 </p>
                                 <p className="text-sm font-semibold text-slate-900 truncate">
-                                  หม้อแปลงขนาด {unit.kva.toLocaleString('th-TH')} kVA
+                                  หม้อแปลงขนาด {unit.kva.toLocaleString('th-TH')} kVA · {unit.phase}
                                 </p>
                                 <p className="text-xs text-slate-500 truncate">
                                   {unit.summaryNote}

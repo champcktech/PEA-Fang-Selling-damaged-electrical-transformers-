@@ -32,12 +32,12 @@ export function TransformerDetailModal({
   if (!unit) return null;
 
   const activeImage = unit.images[activeImageIdx] || unit.images[0];
-  const headingTitle = `หม้อแปลงขนาด ${unit.kva.toLocaleString('th-TH')} kVA`;
+  const headingTitle = `หม้อแปลงขนาด ${unit.kva.toLocaleString('th-TH')} kVA · ${unit.phase}`;
 
   const handleCopySpec = async () => {
     const specText = [
       `PEA No.: ${unit.peaNo} (${unit.lotCode})`,
-      `พิกัดกำลังไฟฟ้า: ${unit.kva.toLocaleString('th-TH')} kVA`,
+      `พิกัดกำลังไฟฟ้า: ${unit.kva.toLocaleString('th-TH')} kVA (${unit.phase})`,
       `จำนวน: ${unit.stockQty} เครื่อง`,
       `รายละเอียดเพิ่มเติม: ${unit.summaryNote}`,
     ].join('\n');
@@ -55,6 +55,7 @@ export function TransformerDetailModal({
     { label: 'PEA No.', value: unit.peaNo, mono: true },
     { label: 'ล็อตสินค้า', value: unit.lotCode },
     { label: 'พิกัดกำลังไฟฟ้า', value: `${unit.kva.toLocaleString('th-TH')} kVA`, mono: true },
+    { label: 'จำนวนเฟส', value: unit.phase, mono: true },
     { label: 'จำนวนในล็อต', value: `${unit.stockQty} เครื่อง`, mono: true },
   ];
 

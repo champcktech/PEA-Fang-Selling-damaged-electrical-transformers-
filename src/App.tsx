@@ -35,7 +35,7 @@ export default function App() {
       if (selectedLotId !== 'all' && unit.lotId !== selectedLotId) return false;
       if (q) {
         const haystack =
-          `${unit.peaNo} ${unit.lotCode} ${unit.kva} kva ${unit.summaryNote}`.toLowerCase();
+          `${unit.peaNo} ${unit.lotCode} ${unit.kva} kva ${unit.phase} ${unit.summaryNote}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;

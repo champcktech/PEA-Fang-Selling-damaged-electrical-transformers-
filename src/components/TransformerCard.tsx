@@ -8,7 +8,7 @@ interface TransformerCardProps {
 }
 
 export function TransformerCard({ unit, onInspect }: TransformerCardProps) {
-  const cardTitle = `หม้อแปลงขนาด ${unit.kva.toLocaleString('th-TH')} kVA`;
+  const cardTitle = `หม้อแปลงขนาด ${unit.kva.toLocaleString('th-TH')} kVA · ${unit.phase}`;
 
   return (
     <article className="group flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300">

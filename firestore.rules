@@ -56,11 +56,11 @@ service cloud.firestore {
 
     function isValidTransformerUnit(data, transformerId) {
       return data.keys().hasAll([
-          'id', 'lotId', 'lotCode', 'peaNo', 'kva',
+          'id', 'lotId', 'lotCode', 'peaNo', 'kva', 'phase',
           'stockQty', 'summaryNote', 'imageUrls', 'imageCaptions', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'id', 'lotId', 'lotCode', 'peaNo', 'kva',
+          'id', 'lotId', 'lotCode', 'peaNo', 'kva', 'phase',
           'stockQty', 'summaryNote', 'imageUrls', 'imageCaptions', 'createdAt', 'updatedAt'
         ])
         && data.id is string && data.id == transformerId && isValidId(data.id)
@@ -68,6 +68,7 @@ service cloud.firestore {
         && data.lotCode is string && data.lotCode.size() >= 2 && data.lotCode.size() <= 80
         && data.peaNo is string && data.peaNo.size() == 11 && data.peaNo.matches('^TR[0-9]{2}-[0-9]{6}$')
         && data.kva is number && data.kva >= 1 && data.kva <= 100000
+        && data.phase in ['1 เฟส', '3 เฟส']
         && data.stockQty is number && data.stockQty >= 0 && data.stockQty <= 1000
         && data.summaryNote is string && data.summaryNote.size() >= 2 && data.summaryNote.size() <= 1000
         && data.imageUrls is list && data.imageUrls.size() == 3
@@ -134,7 +135,7 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && exists(/databases/$(database)/documents/lots/$(incoming().lotId))
         && incoming().diff(existing()).affectedKeys().hasOnly([
-          'lotId', 'lotCode', 'peaNo', 'kva',
+          'lotId', 'lotCode', 'peaNo', 'kva', 'phase',
           'stockQty', 'summaryNote', 'imageUrls', 'imageCaptions', 'updatedAt'
         ]);
       allow delete: if isAdmin() && isValidId(transformerId);

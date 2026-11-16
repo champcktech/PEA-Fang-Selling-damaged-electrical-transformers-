@@ -18,6 +18,7 @@ import {
   PHOTO_SLOT_LABELS,
   TRANSFORMER_UNITS,
   TransformerLot,
+  TransformerPhase,
   TransformerUnit,
 } from '../data/transformers';
 
@@ -139,6 +140,7 @@ export async function seedInitialCatalogToFirestore(options?: {
       lotCode: unit.lotCode.slice(0, 80),
       peaNo: unit.peaNo.trim().toUpperCase(),
       kva: unit.kva,
+      phase: unit.phase,
       stockQty: unit.stockQty,
       summaryNote: unit.summaryNote.slice(0, 1000),
       imageUrls: [0, 1, 2].map((idx) =>
@@ -254,6 +256,7 @@ export interface SaveTransformerInput {
   lotCode: string;
   peaNo: string;
   kva: number;
+  phase: TransformerPhase;
   stockQty: number;
   summaryNote: string;
   imageUrls: [string, string, string];
@@ -279,6 +282,7 @@ export async function saveTransformerToFirestore(
     lotCode: input.lotCode.trim().slice(0, 80),
     peaNo: input.peaNo.trim().toUpperCase().slice(0, 11),
     kva: Math.max(1, Math.min(100000, Number(input.kva) || 100)),
+    phase: input.phase === '1 เฟส' ? '1 เฟส' : '3 เฟส',
     stockQty: Math.max(0, Math.min(1000, Number(input.stockQty) || 0)),
     summaryNote: input.summaryNote.trim().slice(0, 1000),
     imageUrls: safeUrls,
@@ -338,6 +342,7 @@ export function mapDocToTransformerUnit(
     lotCode: String(data.lotCode || ''),
     peaNo: String(data.peaNo || data.peaAssetNo || '-'),
     kva: Number(data.kva || 0),
+    phase: data.phase === '1 เฟส' ? '1 เฟส' : '3 เฟส',
     stockQty: Number(data.stockQty || 0),
     summaryNote: String(data.summaryNote || ''),
     images: [0, 1, 2].map((idx) => {

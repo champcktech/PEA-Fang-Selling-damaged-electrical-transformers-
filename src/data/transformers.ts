@@ -4,6 +4,12 @@ export const PHOTO_SLOT_LABELS = [
   '3. เนมเพลท',
 ] as const;
 
+export const KVA_PRESET_OPTIONS = [
+  10, 20, 30, 50, 100, 160, 250, 315, 400, 500,
+] as const;
+
+export type TransformerPhase = '1 เฟส' | '3 เฟส';
+
 export const PEA_NO_REGEX = /^TR[0-9]{2}-[0-9]{6}$/;
 
 export interface TransformerImage {
@@ -27,6 +33,7 @@ export interface TransformerUnit {
   lotCode: string;
   peaNo: string;
   kva: number;
+  phase: TransformerPhase;
   stockQty: number;
   summaryNote: string;
   images: TransformerImage[];
@@ -80,6 +87,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
     peaNo: 'TR54-025018',
     kva: 250,
+    phase: '3 เฟส',
     stockQty: 2,
     summaryNote:
       'ปลดระวางจากระบบจำหน่าย อ.ฝาง ตัวถังภายนอกยังมีสภาพแข็งแรง ครีบระบายความร้อนไม่บิดเบี้ยว น้ำมันภายในยังอยู่ครบ (เสื่อมสภาพ)',
@@ -95,6 +103,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
     peaNo: 'TR52-016044',
     kva: 160,
+    phase: '3 เฟส',
     stockQty: 3,
     summaryNote:
       'ถอดเปลี่ยนตามวาระซ่อมบำรุง พบคราบน้ำมันซึมบริเวณตะเข็บถังด้านล่าง ขั้วต่อทองแดงและเนมเพลทเดิมอยู่ครบ เหมาะสำหรับนำไปซ่อมแซมหรือแยกอะไหล่',
@@ -110,6 +119,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 1 · ระบบจำหน่าย 22kV',
     peaNo: 'TR51-010209',
     kva: 100,
+    phase: '3 เฟส',
     stockQty: 2,
     summaryNote:
       'หม้อแปลง 100 kVA ปลดระวางเนื่องจากบุชชิ่งพอร์ซเลนฝั่งแรงสูงบิ่นเสียหาย ขดลวดภายในยังไม่ได้เปิดซ่อม ขายตามสภาพจริง',
@@ -125,6 +135,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
     peaNo: 'TR55-100012',
     kva: 1000,
+    phase: '3 เฟส',
     stockQty: 1,
     summaryNote:
       'หม้อแปลงขนาดใหญ่ 1,000 kVA ถอดออกเนื่องจากค่าน้ำมันตกเกณฑ์ ตัวถังและครีบระบายความร้อนครบชุด',
@@ -140,6 +151,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
     peaNo: 'TR56-050031',
     kva: 500,
+    phase: '3 เฟส',
     stockQty: 2,
     summaryNote:
       'หม้อแปลง 500 kVA มีอาการครีบถังบวมเล็กน้อยจากการใช้งานหนักต่อเนื่องและวัดค่าฉนวนไม่ผ่านเกณฑ์การจ่ายไฟต่อ จำหน่ายตามสภาพ',
@@ -155,6 +167,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 2 · กำลังกลาง–ใหญ่',
     peaNo: 'TR57-080007',
     kva: 800,
+    phase: '3 เฟส',
     stockQty: 1,
     summaryNote:
       'หม้อแปลง 800 kVA คอยล์มีรอยร้าวและคราบเขม่าบางส่วน แกนเหล็กและขดลวดภายในยังอยู่ครบชุด',
@@ -170,6 +183,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 3 · ชำรุดหนัก / ซากอะไหล่',
     peaNo: 'TR48-016091',
     kva: 160,
+    phase: '3 เฟส',
     stockQty: 4,
     summaryNote:
       'หม้อแปลงชำรุดหนักจากเหตุฟ้าผ่า ขดลวดภายในไหม้และถ่ายน้ำมันหม้อแปลงออกหมดแล้วเพื่อความปลอดภัยในการจัดเก็บ เหมาะสำหรับประมูลซื้อซากเหล็กและทองแดง',
@@ -185,6 +199,7 @@ export const TRANSFORMER_UNITS: TransformerUnit[] = [
     lotCode: 'ล็อตที่ 3 · ชำรุดหนัก / ซากอะไหล่',
     peaNo: 'TR47-005155',
     kva: 50,
+    phase: '1 เฟส',
     stockQty: 5,
     summaryNote:
       'ซากหม้อแปลง 50 kVA สภาพเก่า ตัวถังมีสนิมผุและบุชชิ่งแรงต่ำชำรุดขาดหาย 2 ต้น แกนเหล็กและขดลวดภายในยังไม่ได้รื้อถอน ขายตามสภาพหน้าลานพัสดุ',

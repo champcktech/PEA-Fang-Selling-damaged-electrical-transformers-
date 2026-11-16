@@ -93,6 +93,10 @@
         "kva": {
           "type": "number"
         },
+        "phase": {
+          "type": "string",
+          "enum": ["1 เฟส", "3 เฟส"]
+        },
         "stockQty": {
           "type": "number"
         },
@@ -122,6 +126,7 @@
         "lotCode",
         "peaNo",
         "kva",
+        "phase",
         "stockQty",
         "summaryNote",
         "imageUrls",
